@@ -5,18 +5,16 @@ spring:
   boot:
     admin:
       client:
-        url: http://localhost:8080
+        url: ${SPRING_BOOT_ADMIN_CLIENT_URL}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/architecture_college_db
-    username: alexistrejo
-    password: vladilena
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    #hibernate:
-    #  ddl-auto: update
 
   cloud:
     netflix:
@@ -33,7 +31,7 @@ management:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_DEFAULT_ZONE}
   instance:
     prefer-ip-address: true
     lease-renewal-interval-in-seconds: 10
@@ -53,4 +51,4 @@ springdoc:
     packages-to-scan: microservice.academic_curriculum_service
 
 server:
-  port: 8084
+  port: ${SERVER_PORT}

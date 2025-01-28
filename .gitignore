@@ -23,5 +23,13 @@
 hs_err_pid*
 replay_pid*
 
-.gradle
-.idea
+.idea/
+.gradle/
+
+academic_curriculum-service/.env
+enrollment-service/.env
+grade-service/.env
+schedule-service/.env
+student-service/.env
+teacher-service/.env
+user-service/.env
