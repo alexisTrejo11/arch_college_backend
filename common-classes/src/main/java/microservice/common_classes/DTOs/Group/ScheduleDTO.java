@@ -24,4 +24,10 @@ public class ScheduleDTO {
         @JsonProperty("end_time")
         @NotNull(message = "end_time can't be null")
         private LocalTime endTime;
+
+        public ScheduleDTO(WEEKDAY day, LocalTime startTime, LocalTime endTime) {
+                this.day = day;
+                this.startTime = startTime;
+                this.endTime = endTime;
+        }
 }

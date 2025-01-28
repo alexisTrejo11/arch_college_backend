@@ -61,13 +61,14 @@ public class ScheduleService {
         }
 
         return CompletableFuture.supplyAsync(() -> {
-            List<Group> existingGroups = groupRepository.findByTeacherIdAndSchoolPeriod(teacherId, currentSemester)
+            // Remove Group ID to avoid conflict while updating
+            List<Group> currentTeacherGroups = groupRepository.findByTeacherIdAndSchoolPeriod(teacherId, currentSemester)
                     .stream()
                     .filter(group -> groupId == null || !groupId.equals(group.getId()))
                     .toList();
 
             for (ScheduleDTO newSchedule : schedules) {
-                if (hasScheduleConflict(newSchedule, existingGroups)) {
+                if (hasScheduleConflict(newSchedule, currentTeacherGroups)) {
                     return Result.error("Schedule conflict detected: The teacher with ID " + teacherId + " already assigned to another group at the same time.");
                 }
             }
@@ -82,6 +83,7 @@ public class ScheduleService {
             return CompletableFuture.completedFuture(Result.success());
         }
 
+        // TODO: REFACTOR
         return CompletableFuture.allOf(
                 teacherIds.stream()
                         .map(teacherId -> validateTeacherSchedule(teacherId, schedules, groupId))
