@@ -58,7 +58,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         return Result.success();
     }
 
-    private Result<Void> validateNotGradeConflict(EnrollmentRelationship enrollmentRelationship) {
+    public Result<Void> validateNotGradeConflict(EnrollmentRelationship enrollmentRelationship) {
          List<Grade> studentGrades = enrollmentRelationship.getStudentGrades();
 
         if (enrollmentRelationship.getObligatorySubject() != null) {
@@ -94,7 +94,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         return Result.success();
     }
 
-    private Result<Void> validateMaximumCreditsPerStudent(String accountNumber, EnrollmentRelationship enrollmentRelationship) {
+    public Result<Void> validateMaximumCreditsPerStudent(String accountNumber, EnrollmentRelationship enrollmentRelationship) {
         List<Enrollment> currentStudentEnrollments = enrollmentRepository.findByStudentAccountNumberAndSchoolPeriod(accountNumber, schoolPeriod);
         int currentTotalCredits = 0;
 
@@ -109,9 +109,9 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         return Result.success();
     }
 
-    private Result<Void> validateNotDuplicatedEnrollment(String groupKey, String subjectKey ,List<Enrollment> groupEnrollments) {
+    public Result<Void> validateNotDuplicatedEnrollment(String groupKey, String subjectKey ,List<Enrollment> groupEnrollments) {
         Optional<Enrollment> optionalEnrollment = groupEnrollments.stream()
-                .filter(groupEnrollment -> (groupEnrollment.getGroupKey().equals(groupKey) && groupEnrollment.getSubjectKey().equals(groupKey)))
+                .filter(groupEnrollment -> (groupEnrollment.getGroupKey().equals(groupKey) && groupEnrollment.getSubjectKey().equals(subjectKey)))
                 .findAny();
 
         if (optionalEnrollment.isPresent()) {
@@ -139,7 +139,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         }
     }
 
-    private Result<Void> validateOrdinarySubject(ObligatorySubject ordinarySubject, Student student ) {
+    public Result<Void> validateOrdinarySubject(ObligatorySubject ordinarySubject, Student student) {
         int semestersCompleted = student.getSemestersCompleted();
         int subjectSemesterNumber = ordinarySubject.getSemester();
 
@@ -156,7 +156,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         return Result.success();
     }
 
-    private Result<Void> validateElectiveSubject(ElectiveSubject electiveSubject, Student student, List<Grade> studentGrades) {
+    public Result<Void> validateElectiveSubject(ElectiveSubject electiveSubject, Student student, List<Grade> studentGrades) {
         int semestersCompleted = student.getSemestersCompleted();
         Long professionalLineId = student.getProfessionalLineId();
         ProfessionalLineModality professionalLineModality = student.getProfessionalLineModality();
@@ -179,7 +179,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         };
     }
 
-    private Result<Void> validateElectivesModality(Student student, ElectiveSubject electiveSubject, List<Grade> studentGrades) {
+    public Result<Void> validateElectivesModality(Student student, ElectiveSubject electiveSubject, List<Grade> studentGrades) {
         Map<String, List<Grade>> classifiedGrades = classifyElectiveGrades(studentGrades, student.getProfessionalLineId());
 
         List<Grade> gradesFromStudentProfessionalLine = classifiedGrades.get("professionalLine");
@@ -193,18 +193,18 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
         Long studentProfessionalLineId = student.getProfessionalLineId();
         Long electiveSubjectProfessionalLineId = electiveSubject.getProfessionalLineId();
 
-        if (studentProfessionalLineId.equals(electiveSubjectProfessionalLineId)) {
-            return Result.success();
-        }
-
         if (gradesFromOtherProfessionalLines.size() >= 4) {
             return Result.error(ERROR_FREE_ELECTIVES_LIMIT);
+        }
+
+        if (studentProfessionalLineId.equals(electiveSubjectProfessionalLineId)) {
+            return Result.success();
         }
 
         return Result.success();
     }
 
-    private Result<Void> validateProfessionalPracticesModality(Student student, ElectiveSubject electiveSubject, List<Grade> studentGrades) {
+    public Result<Void> validateProfessionalPracticesModality(Student student, ElectiveSubject electiveSubject, List<Grade> studentGrades) {
         if (!Objects.equals(electiveSubject.getProfessionalLineId(), student.getProfessionalLineId())) {
             return Result.error("You can only enroll in elective subjects from your professional line.");
         }
@@ -234,7 +234,7 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
     }
 
     private boolean isSubjectTooFarAhead(int semestersCompleted, int subjectSemesterNumber) {
-        return (subjectSemesterNumber - semestersCompleted) > 2;
+        return Math.abs(subjectSemesterNumber - semestersCompleted) > 2;
     }
 
     private Map<String, List<Grade>> classifyElectiveGrades(List<Grade> studentGrades, Long professionalLineId) {
@@ -252,4 +252,5 @@ public class EnrollmentValidationServiceImpl implements EnrollmentValidationServ
                 "freeElectives", freeElectiveGrades
         );
     }
+
 }

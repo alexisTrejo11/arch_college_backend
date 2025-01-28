@@ -17,13 +17,13 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class EnrollmentEnrollmentFinderServiceImpl implements EnrollmentFinderService {
+public class EnrollmentFinderServiceImpl implements EnrollmentFinderService {
     private final EnrollmentRepository enrollmentRepository;
     private final EnrollmentMapper enrollmentMapper;
     private final String CURRENT_SCHOOL_PERIOD = AcademicData.getCurrentSchoolPeriod();
 
     @Autowired
-    public EnrollmentEnrollmentFinderServiceImpl(EnrollmentRepository enrollmentRepository,
+    public EnrollmentFinderServiceImpl(EnrollmentRepository enrollmentRepository,
                                                  EnrollmentMapper enrollmentMapper) {
         this.enrollmentRepository = enrollmentRepository;
         this.enrollmentMapper = enrollmentMapper;

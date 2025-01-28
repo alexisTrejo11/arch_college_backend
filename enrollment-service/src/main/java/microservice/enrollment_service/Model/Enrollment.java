@@ -55,6 +55,11 @@ public class Enrollment {
     @Column(name = "is_locked")
     private boolean isLocked;
 
+    public Enrollment(String groupKey, String subjectKey) {
+        this.groupKey = groupKey;
+        this.subjectKey = subjectKey;
+    }
+
     public void lock () {
         this.isLocked = true;
     }
@@ -65,4 +70,7 @@ public class Enrollment {
         this.isLocked = false;
     }
 
+    public Enrollment(int subjectCredits) {
+        this.subjectCredits = subjectCredits;
+    }
 }

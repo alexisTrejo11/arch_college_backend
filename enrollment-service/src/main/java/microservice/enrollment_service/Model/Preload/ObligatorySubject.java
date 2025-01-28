@@ -40,4 +40,9 @@ public class ObligatorySubject {
     @JsonProperty("credits")
     @Field("credits")
     private int credits;
+
+
+    public ObligatorySubject(int semester) {
+        this.semester = semester;
+    }
 }

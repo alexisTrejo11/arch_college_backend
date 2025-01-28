@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import microservice.common_classes.Utils.Grades.GradeStatus;
 import microservice.common_classes.Utils.SubjectType;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "grades")
@@ -77,8 +79,7 @@ public class Grade {
     private LocalDateTime deletedAt;
 
     public boolean isApproved() {
-        return gradeValue >= 6
-                && this.gradeStatus != GradeStatus.NOT_ACCREDITED;
+        return gradeValue >= 6;
     }
 
     @Override

@@ -6,3 +6,4 @@ public enum GradeStatus {
     VALIDATED,
     NOT_VALID;
 }
+
