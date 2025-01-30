@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class GroupDeletionController {
 
     private final GroupDeleteServiceImpl groupDeleteService;
-    private final GroupFinderServiceImpl groupFinderServiceImpl;
 
     @Operation(
             summary = "Remove Teacher from Group",

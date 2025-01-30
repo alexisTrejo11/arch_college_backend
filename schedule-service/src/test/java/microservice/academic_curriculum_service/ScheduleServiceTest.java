@@ -45,10 +45,10 @@ class ScheduleServiceTest {
                 .thenReturn(List.of());
 
         // Act
-        CompletableFuture<Result<Void>> result = scheduleService.validateClassroomSchedule(classroom, schedules, groupId);
+        Result<Void> result = scheduleService.validateClassroomSchedule(classroom, schedules, groupId);
 
         // Assert
-        assertTrue(result.join().isSuccess());
+        assertTrue(result.isSuccess());
         verify(groupRepository).findByClassroomAndSchoolPeriod(eq(classroom), anyString());
     }
 
@@ -65,12 +65,12 @@ class ScheduleServiceTest {
                 .thenReturn(List.of(conflictingGroup));
 
         // Act
-        CompletableFuture<Result<Void>> result = scheduleService.validateClassroomSchedule(classroom, schedules, groupId);
+        Result<Void> result = scheduleService.validateClassroomSchedule(classroom, schedules, groupId);
 
         // Assert
-        assertFalse(result.join().isSuccess());
+        assertFalse(result.isSuccess());
         assertEquals("Schedule conflict detected: The requested schedule is already assigned to another group at the same time.",
-                result.join().getErrorMessage());
+                result.getErrorMessage());
     }
 
     @Test
@@ -84,10 +84,10 @@ class ScheduleServiceTest {
                 .thenReturn(List.of());
 
         // Act
-        CompletableFuture<Result<Void>> result = scheduleService.validateTeacherSchedule(teacherId, schedules, groupId);
+        Result<Void> result = scheduleService.validateTeacherSchedule(teacherId, schedules, groupId);
 
         // Assert
-        assertTrue(result.join().isSuccess());
+        assertTrue(result.isSuccess());
         verify(groupRepository).findByTeacherIdAndSchoolPeriod(eq(teacherId), anyString());
     }
 

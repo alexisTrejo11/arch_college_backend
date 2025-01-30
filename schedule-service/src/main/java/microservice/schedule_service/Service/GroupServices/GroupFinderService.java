@@ -7,11 +7,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GroupFinderService {
-    Result<GroupDTO> getGroupById(Long groupId);
-    Result<List<GroupDTO>> getGroupsByIds(List<Long> groupsId);
-    Result<GroupDTO> getCurrentGroupByKey(String key);
+    Optional<GroupDTO> getGroupById(Long groupId);
+    List<GroupDTO> getGroupsByIds(List<Long> groupsId);
+    Optional<GroupDTO> getCurrentGroupByKey(String key);
     Page<GroupDTO> findGroupsWithFilters(GroupFinderFilter groupFinderFilter, Pageable pageable);
     List<GroupDTO> getCurrentGroupByTeacherId(Long teacherId);
     Page<GroupDTO> getCurrentGroups(Pageable pageable);

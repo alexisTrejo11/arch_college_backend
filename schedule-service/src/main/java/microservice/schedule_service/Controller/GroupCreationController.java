@@ -45,20 +45,12 @@ public class GroupCreationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseWrapper.badRequest(relationshipsResult.getErrorMessage()));
         }
 
-        System.out.println(relationshipsResult.getData());
-
-        // Creation: Group ID = Null || Update: Group ID = Not Null
-        CompletableFuture<Result<Void>> classroomScheduleResultFuture = scheduleService.validateClassroomSchedule(OBligatoryGroupInsertDTO.getClassroom(), OBligatoryGroupInsertDTO.getSchedule(), null);
-        CompletableFuture<Result<Void>> teacherScheduleResultFuture = scheduleService.validateTeachersSchedule(OBligatoryGroupInsertDTO.getTeacherIds(), OBligatoryGroupInsertDTO.getSchedule(), null);
-
-        CompletableFuture.allOf(classroomScheduleResultFuture, teacherScheduleResultFuture);
-        Result<Void> teacherScheduleResult = classroomScheduleResultFuture.join();
-        Result<Void> teacherResult = teacherScheduleResultFuture.join();
-
-        if (!teacherResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherResult.getErrorMessage()));
+        Result<Void> classroomScheduleResult = scheduleService.validateClassroomSchedule(OBligatoryGroupInsertDTO.getClassroom(), OBligatoryGroupInsertDTO.getSchedule(), null);
+        if (!classroomScheduleResult.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(classroomScheduleResult.getErrorMessage()));
         }
 
+        Result<Void> teacherScheduleResult = scheduleService.validateTeachersSchedule(OBligatoryGroupInsertDTO.getTeacherIds(), OBligatoryGroupInsertDTO.getSchedule(), null);
         if (!teacherScheduleResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherScheduleResult.getErrorMessage()));
         }
@@ -79,18 +71,12 @@ public class GroupCreationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseWrapper.badRequest(relationshipsResult.getErrorMessage()));
         }
 
-        // Creation: Group ID = Null || Update: Group ID = Not Null
-        CompletableFuture<Result<Void>> classroomScheduleResultFuture = scheduleService.validateClassroomSchedule(electiveGroupInsertDTO.getClassroom(), electiveGroupInsertDTO.getSchedule(), null);
-        CompletableFuture<Result<Void>> teacherScheduleResultFuture = scheduleService.validateTeacherSchedule(electiveGroupInsertDTO.getTeacherId(), electiveGroupInsertDTO.getSchedule(), null);
-
-        CompletableFuture.allOf(classroomScheduleResultFuture, teacherScheduleResultFuture);
-        Result<Void> teacherScheduleResult = classroomScheduleResultFuture.join();
-        Result<Void> teacherResult = teacherScheduleResultFuture.join();
-
-        if (!teacherResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherResult.getErrorMessage()));
+        Result<Void> classroomScheduleResult = scheduleService.validateClassroomSchedule(electiveGroupInsertDTO.getClassroom(), electiveGroupInsertDTO.getSchedule(), null);
+        if (!classroomScheduleResult.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(classroomScheduleResult.getErrorMessage()));
         }
 
+        Result<Void> teacherScheduleResult = scheduleService.validateTeacherSchedule(electiveGroupInsertDTO.getTeacherId(), electiveGroupInsertDTO.getSchedule(), null);
         if (!teacherScheduleResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherScheduleResult.getErrorMessage()));
         }

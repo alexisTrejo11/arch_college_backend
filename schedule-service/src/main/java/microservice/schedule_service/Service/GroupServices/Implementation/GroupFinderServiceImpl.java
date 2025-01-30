@@ -2,7 +2,6 @@ package microservice.schedule_service.Service.GroupServices.Implementation;
 
 import lombok.RequiredArgsConstructor;
 import microservice.common_classes.DTOs.Group.GroupDTO;
-import microservice.common_classes.Utils.Response.Result;
 import microservice.common_classes.Utils.Schedule.AcademicData;
 import microservice.schedule_service.Mapppers.GroupMapper;
 import microservice.schedule_service.Models.Group;
@@ -17,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,43 +26,23 @@ public class GroupFinderServiceImpl implements GroupFinderService {
     private final GroupMapper groupMapper;
 
     @Cacheable(value = "groupById", key = "#groupId")
-    public Result<GroupDTO> getGroupById(Long groupId) {
+    public Optional<GroupDTO> getGroupById(Long groupId) {
         return groupRepository.findById(groupId)
-                .map(groupMapper::entityToDTO)
-                .map(Result::success)
-                .orElseGet(() -> Result.error("Group with Id " + groupId + " not found"));
+                .map(groupMapper::entityToDTO);
     }
 
     @Cacheable(value = "groupsByIds", key = "#groupsId")
-    public Result<List<GroupDTO>> getGroupsByIds(List<Long> groupsId) {
+    public List<GroupDTO> getGroupsByIds(List<Long> groupsId) {
         List<Group> groups = groupRepository.findByIdIn(groupsId);
-
-        List<Long> foundGroupIds = groups.stream()
-                .map(Group::getId)
-                .toList();
-
-        List<Long> missingIds = groupsId.stream()
-                .filter(id -> !foundGroupIds.contains(id))
-                .toList();
-
-        if (!missingIds.isEmpty()) {
-            String errorMessage = "Groups not found for IDs: " + missingIds;
-            return Result.error(errorMessage);
-        }
-
-        List<GroupDTO> groupDTOS = groups.stream()
+        return groups.stream()
                 .map(groupMapper::entityToDTO)
                 .toList();
-
-        return Result.success(groupDTOS);
     }
 
     @Cacheable(value = "groupCurrentByKey", key = "#key")
-    public Result<GroupDTO> getCurrentGroupByKey(String key) {
+    public Optional<GroupDTO> getCurrentGroupByKey(String key) {
         return groupRepository.findByGroupKeyAndSchoolPeriod(key, AcademicData.getCurrentSchoolPeriod())
-                .map(groupMapper::entityToDTO)
-                .map(Result::success)
-                .orElseGet(() -> Result.error("Group with Key " + key + " not found"));
+                .map(groupMapper::entityToDTO);
     }
 
     @Cacheable(value = "groupsWithFilters", key = "#groupFinderFilter")

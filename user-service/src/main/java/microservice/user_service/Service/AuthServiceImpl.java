@@ -11,6 +11,7 @@ import microservice.common_classes.Utils.Response.Result;
 import microservice.user_service.Mappers.UserMapper;
 import microservice.user_service.Model.User;
 import microservice.user_service.Repository.UserRepository;
+import microservice.user_service.Utils.JWTResponseDTO;
 import microservice.user_service.Utils.PasswordUtil;
 import microservice.user_service.Utils.AccountNumberValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,15 +48,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Result<Void> validateSignupCredentials(SignupDTO signupDTO) {
-        Result<Void> emailResult = validateUniqueEmail(signupDTO.getEmail());
-        if (!emailResult.isSuccess()) {
-            return Result.error(emailResult.getErrorMessage());
+        boolean isEmailAvailable = validateUniqueEmail(signupDTO.getEmail());
+        if (!isEmailAvailable) {
+            return Result.error("email already taken");
         }
 
         if (signupDTO.getPhoneNumber() != null) {
-            Result<Void> phoneNumberResult = validateUniquePhoneNumber(signupDTO.getPhoneNumber());
-            if (!phoneNumberResult.isSuccess()) {
-                return Result.error(phoneNumberResult.getErrorMessage());
+            boolean isPhoneAvailable = validateUniquePhoneNumber(signupDTO.getPhoneNumber());
+            if (!isPhoneAvailable) {
+                return Result.error("phone number already taken");
             }
         }
 
@@ -63,11 +64,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Cacheable(value = "loginCache", key = "#loginDTO.accountNumber")
     public Result<UserDTO> validateLoginCredentials(LoginDTO loginDTO) {
         Optional<User> optionalUser = userRepository.findByUsername(loginDTO.getAccountNumber());
         if (optionalUser.isEmpty()) {
-            return Result.error("invalid account number");
+            return Result.error("Invalid account number");
         }
 
         User user = optionalUser.get();
@@ -77,8 +77,14 @@ public class AuthServiceImpl implements AuthService {
             return Result.error("Wrong Password");
         }
 
-        return Result.success(userMapper.entityToDTO(user));
+        return Result.success(getCachedUserDTO(user));
     }
+
+    @Cacheable(value = "loginCache", key = "#user.username")
+    public UserDTO getCachedUserDTO(User user) {
+        return userMapper.entityToDTO(user);
+    }
+
 
     @Override
     public Result<Void> validateExistingMember(String accountNumber) {
@@ -92,21 +98,33 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Async("taskExecutor")
-    public void processLogin(UserDTO userDTO) {
-        Optional<User> optionalUser = userRepository.findByEmail(userDTO.getEmail());
-        User user = optionalUser.get();
+    public JWTResponseDTO processLogin(UserDTO userDTO) {
+        List<String> roleName = userDTO.getRoles().stream().map(RoleDTO::getName).toList();
+        String accessToken = jwtSecurity.generateAccessToken(userDTO.getId(), userDTO.getUsername(), roleName);
+        String refreshToken = jwtSecurity.generateRefreshToken(userDTO.getId());
 
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
+        updateLastLoginAsync(userDTO.getEmail());
 
+        return new JWTResponseDTO(refreshToken, accessToken);
     }
 
     @Override
-    public String getJWTToken(UserDTO userDTO) {
+    public JWTResponseDTO proccesSingup(UserDTO userDTO) {
         List<String> roleName = userDTO.getRoles().stream().map(RoleDTO::getName).toList();
-        return jwtSecurity.generateToken(userDTO.getId(), userDTO.getUsername(), roleName);
+        String accessToken = jwtSecurity.generateAccessToken(userDTO.getId(), userDTO.getUsername(), roleName);
+        String refreshToken = jwtSecurity.generateRefreshToken(userDTO.getId());
+
+        return new JWTResponseDTO(refreshToken, accessToken);
     }
+
+    @Async("taskExecutor")
+    public void updateLastLoginAsync(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            user.setLastLogin(LocalDateTime.now());
+            userRepository.save(user);
+        });
+    }
+
 
     @Override
     public Result<Void> validatePasswordFormat(String password) {
@@ -144,13 +162,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Result<Void> validateStudent(String accountNumber) {
-        CompletableFuture<Boolean> exisitingStudentFuture = studentFacadeService.validateExisitingStudentAsync(accountNumber);
+        CompletableFuture<Boolean> existingStudentFuture = studentFacadeService.validateExisitingStudentAsync(accountNumber);
         CompletableFuture<Optional<User>> optionalUserFuture = CompletableFuture.supplyAsync(() -> userRepository.findByUsername(accountNumber)
         );
 
-        return CompletableFuture.allOf(exisitingStudentFuture, optionalUserFuture)
+        return CompletableFuture.allOf(existingStudentFuture, optionalUserFuture)
                 .thenApply(v -> {
-                    Boolean isStudentExisting = exisitingStudentFuture.join();
+                    Boolean isStudentExisting = existingStudentFuture.join();
                     if (!isStudentExisting) {
                         return Result.<Void>error("Invalid account number");
                     }
@@ -164,22 +182,12 @@ public class AuthServiceImpl implements AuthService {
                 }).join();
     }
 
-    private Result<Void> validateUniquePhoneNumber(String phoneNumber) {
-        Optional<User> optionalPhoneUser = userRepository.findByPhoneNumber(phoneNumber);
+    private boolean validateUniquePhoneNumber(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber).isEmpty();
 
-        if (optionalPhoneUser.isPresent()) {
-            return Result.error("phone_number already taken");
-        }
-          return Result.success();
     }
 
-    private Result<Void> validateUniqueEmail(String email) {
-        Optional<User> optionalEmailUser = userRepository.findByEmail(email);
-        if (optionalEmailUser.isPresent()) {
-            return Result.error("email already taken");
-        }
-
-        return Result.success();
+    private boolean validateUniqueEmail(String email) {
+        return userRepository.findByEmail(email).isEmpty();
     }
-
 }

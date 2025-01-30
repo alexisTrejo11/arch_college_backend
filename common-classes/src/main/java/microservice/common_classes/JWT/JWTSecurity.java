@@ -30,62 +30,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class JWTSecurity extends OncePerRequestFilter {
+public class JWTSecurity  {
 
     private final SecretKey secretKey;
+    private static final long ACCESS_TOKEN_VALIDITY = 900_000; // 15 min
+    private static final long REFRESH_TOKEN_VALIDITY = 6_048_000_000L; // 7 days
 
     @Autowired
     public JWTSecurity(@Value("${jwt.secret.key}") String secretKey) {
         this.secretKey = new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
     }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String token = extractToken(request);
-        String requestURI = request.getRequestURI();
-
-        if (requestURI.startsWith("/v1/api/public/")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        if (token != null && validateToken(token).isSuccess()) {
-            Result<Claims> claimsResult = validateToken(token);
-            if (claimsResult.isSuccess()) {
-                Claims claims = claimsResult.getData();
-
-                String username = getAccountNumber(claims);
-                List<String> roles = getRoles(claims);
-
-                List<GrantedAuthority> authorities = roles.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
-
-        chain.doFilter(request, response);
-    }
-
-
-
-
-    private String extractToken(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
-            return header.substring(7); // Remove "Bearer " prefix
-        }
-        return null;
-    }
-
-    public String generateToken(Long userId, String username, List<String> roles) {
+    public String generateAccessToken(Long userId, String username, List<String> roles) {
         Claims claims = Jwts.claims();
 
-        // Prefix each role with "ROLE_" individually
         List<String> prefixedRoles = roles.stream()
                 .map(role -> "ROLE_" + role)
                 .collect(Collectors.toList());
@@ -95,8 +53,7 @@ public class JWTSecurity extends OncePerRequestFilter {
         claims.put("username", username);
 
         Date now = new Date();
-        long validityDuration = 3600000; // 1 hour
-        Date validity = new Date(now.getTime() + validityDuration);
+        Date validity = new Date(now.getTime() + ACCESS_TOKEN_VALIDITY);
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -106,8 +63,27 @@ public class JWTSecurity extends OncePerRequestFilter {
                 .compact();
     }
 
-    public Long getUserId(Claims claims) {
-        return claims.get("userId", Long.class);
+    public String generateRefreshToken(Long userId) {
+        Claims claims = Jwts.claims();
+        claims.put("userId", userId);
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + REFRESH_TOKEN_VALIDITY);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String extractToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            return header.substring(7); // Remove "Bearer " prefix
+        }
+        return null;
     }
 
     public String getAccountNumber(Claims claims) {
@@ -151,27 +127,11 @@ public class JWTSecurity extends OncePerRequestFilter {
         return Result.error("Invalid Header Format");
     }
 
-    public Result<Long> getUserIdFromToken(HttpServletRequest request) {
-        Result<Claims> claimsResult = getClaimsFromToken(request);
-        if (!claimsResult.isSuccess()) {
-            return Result.error(claimsResult.getErrorMessage());
-        }
-        return Result.success(getUserId(claimsResult.getData()));
-    }
-
     public String getAccountNumberFromToken(HttpServletRequest request) {
         Result<Claims> claimsResult = getClaimsFromToken(request);
         if (!claimsResult.isSuccess()) {
             throw new RuntimeException(claimsResult.getErrorMessage());
         }
         return getAccountNumber(claimsResult.getData());
-    }
-
-    public Result<List<String>> getRolesFromToken(HttpServletRequest request) {
-        Result<Claims> claimsResult = getClaimsFromToken(request);
-        if (!claimsResult.isSuccess()) {
-            return Result.error(claimsResult.getErrorMessage());
-        }
-        return Result.success(getRoles(claimsResult.getData()));
     }
 }

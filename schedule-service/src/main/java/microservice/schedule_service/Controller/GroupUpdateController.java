@@ -9,6 +9,7 @@ import microservice.common_classes.DTOs.Group.GroupDTO;
 import microservice.common_classes.DTOs.Group.GroupScheduleUpdateDTO;
 import microservice.common_classes.Utils.Response.ResponseWrapper;
 import microservice.common_classes.Utils.Response.Result;
+import microservice.schedule_service.Models.Group;
 import microservice.schedule_service.Service.GroupServices.Implementation.GroupFinderServiceImpl;
 import microservice.schedule_service.Service.GroupServices.Implementation.GroupSpotsService;
 import microservice.schedule_service.Service.GroupServices.Implementation.GroupUpdateServiceImpl;
@@ -16,6 +17,8 @@ import microservice.schedule_service.Service.ScheduleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Tag(name = "Groups API", description = "Endpoints for managing groups")
@@ -33,7 +36,7 @@ public class GroupUpdateController {
     @ApiResponse(responseCode = "409", description = "Conflict in group schedule")
     @PutMapping("/update-schedule")
     public ResponseEntity<ResponseWrapper<GroupDTO>> updateGroupSchedule(@Valid @RequestBody GroupScheduleUpdateDTO groupScheduleUpdateDTO) {
-        Result<Void> teacherResult = scheduleService.validateClassroomSchedule(groupScheduleUpdateDTO.getClassroom(), groupScheduleUpdateDTO.getSchedule(), groupScheduleUpdateDTO.getGroup_id()).join();
+        Result<Void> teacherResult = scheduleService.validateClassroomSchedule(groupScheduleUpdateDTO.getClassroom(), groupScheduleUpdateDTO.getSchedule(), groupScheduleUpdateDTO.getGroup_id());
         if (!teacherResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherResult.getErrorMessage()));
         }
@@ -50,14 +53,14 @@ public class GroupUpdateController {
     @PutMapping("/{key}/add-teacher/{teacherId}")
     public ResponseEntity<ResponseWrapper<GroupDTO>> addTeacherToGroup(@Valid @PathVariable String key,
                                                                        @PathVariable Long teacherId) {
-        Result<GroupDTO> groupResult = groupFinderServiceImpl.getCurrentGroupByKey(key);
-        if (!groupResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound(groupResult.getErrorMessage()));
+        Optional<GroupDTO> optionalGroup = groupFinderServiceImpl.getCurrentGroupByKey(key);
+        if (optionalGroup.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Group Not Found"));
         }
 
-        GroupDTO group = groupResult.getData();
+        GroupDTO group = optionalGroup.get();
 
-        Result<Void> teacherResult = scheduleService.validateTeacherSchedule(teacherId, group.getSchedule(), group.getId()).join();
+        Result<Void> teacherResult = scheduleService.validateTeacherSchedule(teacherId, group.getSchedule(), group.getId());
         if (!teacherResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherResult.getErrorMessage()));
         }
@@ -76,9 +79,9 @@ public class GroupUpdateController {
     @ApiResponse(responseCode = "400", description = "Invalid spot increase request")
     @PutMapping("/{groupId}/add_spots/{spotsToAdd}")
     public ResponseEntity<ResponseWrapper<GroupDTO>> increaseGroupSpotsByKey(@Valid @PathVariable Long groupId, @PathVariable int spotsToAdd) {
-        Result<GroupDTO> groupResult = groupFinderServiceImpl.getGroupById(groupId);
-        if (!groupResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound(groupResult.getErrorMessage()));
+        Optional<GroupDTO> optionalGroup = groupFinderServiceImpl.getGroupById(groupId);
+        if (optionalGroup.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Group", "Id", groupId));
         }
 
         Result<Void> validationResult = groupSpotsService.validateSpotIncrease(spotsToAdd);

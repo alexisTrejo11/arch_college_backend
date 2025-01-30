@@ -9,6 +9,7 @@ import microservice.common_classes.Utils.Response.ResponseWrapper;
 import microservice.common_classes.Utils.Response.Result;
 import microservice.user_service.Service.AuthService;
 import microservice.user_service.Service.UserService;
+import microservice.user_service.Utils.JWTResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup/student")
-    public ResponseEntity<ResponseWrapper<String>> signupStudent(@Valid @RequestBody SignupDTO signupDTO) {
+    public ResponseEntity<ResponseWrapper<JWTResponseDTO>> signupStudent(@Valid @RequestBody SignupDTO signupDTO) {
         log.info("Requesting user creation for student accountNumber: [{}] ", signupDTO.getAccountNumber());
 
         Result<Void> validateStudentResult = authService.validateStudent(signupDTO.getAccountNumber());
@@ -51,14 +52,14 @@ public class AuthController {
 
         userService.addMemberRelationAsync(userDTO.getUsername());
 
-        String jwtToken = authService.getJWTToken(userDTO);
+        JWTResponseDTO jwtToken = authService.proccesSingup(userDTO);
 
         log.info("Student with accountNumber [{}] successfully singed up", signupDTO.getAccountNumber());
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(jwtToken, "User"));
     }
 
     @PostMapping("/signup/admin")
-    public ResponseEntity<ResponseWrapper<String>> signupAdmin(@Valid @RequestBody SignupDTO signupDTO){
+    public ResponseEntity<ResponseWrapper<JWTResponseDTO>> signupAdmin(@Valid @RequestBody SignupDTO signupDTO){
         Result<Void> passwordFormatResult = authService.validatePasswordFormat(signupDTO.getPassword());
         if (!passwordFormatResult.isSuccess()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseWrapper.badRequest(passwordFormatResult.getErrorMessage()));
@@ -73,14 +74,14 @@ public class AuthController {
 
         userService.addMemberRelationAsync(userDTO.getUsername());
 
-        String jwtToken = authService.getJWTToken(userDTO);
+        JWTResponseDTO jwtToken = authService.proccesSingup(userDTO);
         log.info("Admin with username [{}] successfully singed up", signupDTO.getAccountNumber());
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(jwtToken, "User"));
     }
 
 
     @PostMapping("/signup/teacher")
-    public ResponseEntity<ResponseWrapper<String>> signupTeacher(@Valid @RequestBody SignupDTO signupDTO){
+    public ResponseEntity<ResponseWrapper<JWTResponseDTO>> signupTeacher(@Valid @RequestBody SignupDTO signupDTO){
         log.info("Requesting user creation for teacher accountNumber: [{}] ", signupDTO.getAccountNumber());
 
         Result<Void> validateStudentResult = authService.validateTeacher(signupDTO.getAccountNumber());
@@ -101,7 +102,7 @@ public class AuthController {
         UserDTO userDTO = userService.createUser(signupDTO, "TEACHER");
         userService.addMemberRelationAsync(userDTO.getUsername());
 
-        String jwtToken = authService.getJWTToken(userDTO);
+        JWTResponseDTO jwtToken = authService.proccesSingup(userDTO);
 
         log.info("Teacher with accountNumber [{}] successfully singed up", signupDTO.getAccountNumber());
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(jwtToken, "User"));
@@ -109,16 +110,15 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<String>> login(@Valid @RequestBody LoginDTO loginDTO){
+    public ResponseEntity<ResponseWrapper<JWTResponseDTO>> login(@Valid @RequestBody LoginDTO loginDTO){
         Result<UserDTO> validationResult = authService.validateLoginCredentials(loginDTO);
         if (!validationResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(validationResult.getErrorMessage()));
         }
+
         UserDTO userDTO = validationResult.getData();
+        JWTResponseDTO jwtToken = authService.processLogin(userDTO);
 
-        authService.processLogin(userDTO);
-
-        String jwtToken = authService.getJWTToken(userDTO);
         return ResponseEntity.ok(ResponseWrapper.ok(jwtToken, "Login successfully completed"));
     }
 }
