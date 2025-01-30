@@ -56,13 +56,8 @@ public class SubjectSeriesServiceImpl implements SubjectSeriesService {
             Set<Long> subjectIds,
             SubjectService<T, ?> subjectService
     ) {
-        Result<List<T>> subjectResult = subjectService.getSubjectByIdsIn(subjectIds);
+        List<T> subjectDTOS = subjectService.getSubjectByIdsIn(subjectIds);
 
-        if (!subjectResult.isSuccess()) {
-            return Result.error(subjectResult.getErrorMessage());
-        }
-
-        List<T> subjectDTOS = subjectResult.getData();
         for (var subject : subjectDTOS) {
             if (subject.getSeriesId() != null) {
                 return Result.error("Subject With Key " + subject.getKey() + " already has serialization");

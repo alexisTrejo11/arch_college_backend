@@ -33,20 +33,31 @@ public class ElectiveSubjectController {
         this.subjectService = subjectService;
     }
 
-    @Operation(summary = "Get Elective AcademicCurriculumService by ID", description = "Fetches an elective subject by its ID")
+    @Operation(summary = "Get Elective Subject by ID", description = "Fetches an elective subject by its ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Elective AcademicCurriculumService found", content = @Content(schema = @Schema(implementation = ElectiveSubjectDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Elective AcademicCurriculumService not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Elective Subject found", content = @Content(schema = @Schema(implementation = ElectiveSubjectDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Elective Subject not found", content = @Content)
     })
-    @GetMapping("/{subjectId}")
+    @GetMapping("/elective/{subjectId}")
     public ResponseEntity<ResponseWrapper<ElectiveSubjectDTO>> getElectiveSubjectById(@PathVariable Long subjectId) {
-        Result<ElectiveSubjectDTO> areaResult = subjectService.getSubjectById(subjectId);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Elective AcademicCurriculumService", "ID", subjectId));
-        }
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Elective AcademicCurriculumService", "ID", subjectId));
+        return subjectService.getSubjectById(subjectId)
+                .map(subject -> ResponseEntity.ok(ResponseWrapper.found(subject, "Elective Subject", "ID", subjectId)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Elective Subject", "ID", subjectId)));
     }
 
+    @Operation(summary = "Get Elective Subject by Name", description = "Fetches an elective subject by its name")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Elective Subject found", content = @Content(schema = @Schema(implementation = ElectiveSubjectDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Elective Subject not found", content = @Content)
+    })
+    @GetMapping("/elective/name/{name}")
+    public ResponseEntity<ResponseWrapper<ElectiveSubjectDTO>> getElectiveSubjectByName(@PathVariable String name) {
+        return subjectService.getSubjectByName(name)
+                .map(subject -> ResponseEntity.ok(ResponseWrapper.found(subject, "Elective Subject", "name", name)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Elective Subject", "name", name)));
+    }
+    
+    
     @Operation(summary = "Get Elective Subjects by Area ID", description = "Fetches elective subjects by area ID")
     @ApiResponse(responseCode = "200", description = "Elective Subjects found", content = @Content(schema = @Schema(implementation = Page.class)))
     @GetMapping("by-area/{areaId}")
@@ -56,7 +67,8 @@ public class ElectiveSubjectController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ElectiveSubjectDTO> electiveSubjectDTOS = subjectService.getSubjectsByFilterPageable(areaId, "area", pageable);
-        return ResponseEntity.ok(ResponseWrapper.found(electiveSubjectDTOS,"Elective AcademicCurriculumService", "Area ID", areaId));
+
+        return ResponseEntity.ok(ResponseWrapper.found(electiveSubjectDTOS,"Elective Subject", "Area ID", areaId));
     }
 
     @Operation(summary = "Get Elective Subjects by Professional Line ID", description = "Fetches elective subjects by professional line ID")
@@ -68,21 +80,8 @@ public class ElectiveSubjectController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ElectiveSubjectDTO> electiveSubjectDTOS = subjectService.getSubjectsByFilterPageable(professionalLineId, "professional line", pageable);
-        return ResponseEntity.ok(ResponseWrapper.found(electiveSubjectDTOS,"Elective AcademicCurriculumService", "Professional Line ID", professionalLineId));
-    }
 
-    @Operation(summary = "Get Elective AcademicCurriculumService by Name", description = "Fetches an elective subject by its name")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Elective AcademicCurriculumService found", content = @Content(schema = @Schema(implementation = ElectiveSubjectDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Elective AcademicCurriculumService not found", content = @Content)
-    })
-    @GetMapping("/name/{name}")
-    public ResponseEntity<ResponseWrapper<ElectiveSubjectDTO>> getElectiveSubjectByName(@PathVariable String name) {
-        Result<ElectiveSubjectDTO> areaResult = subjectService.getSubjectByName(name);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("ElectiveSubject", "name", name));
-        }
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Elective AcademicCurriculumService", "name", name));
+        return ResponseEntity.ok(ResponseWrapper.found(electiveSubjectDTOS,"Elective Subject", "Professional Line ID", professionalLineId));
     }
 
     @Operation(summary = "Get All Elective Subjects", description = "Fetches all elective subjects with pagination")
@@ -93,6 +92,7 @@ public class ElectiveSubjectController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ElectiveSubjectDTO> professionalLines = subjectService.getAllSubjectsPageable(pageable);
+
         return ResponseEntity.ok(ResponseWrapper.found(professionalLines,"Elective Subjects"));
     }
 
@@ -100,37 +100,37 @@ public class ElectiveSubjectController {
     public ResponseEntity<ResponseWrapper<List<ElectiveSubjectDTO>>> getAllElectiveSubjectByCareer(@PathVariable Long careerId) {
         List<ElectiveSubjectDTO> ordinarySubjectDTOS = subjectService.getSubjectsByFilter(careerId, "career");
 
-        return ResponseEntity.ok(ResponseWrapper.found(ordinarySubjectDTOS,"Elective AcademicCurriculumService", "career Id", careerId));
+        return ResponseEntity.ok(ResponseWrapper.found(ordinarySubjectDTOS,"Elective Subject", "career Id", careerId));
     }
 
-    @Operation(summary = "Create Elective AcademicCurriculumService", description = "Creates a new elective subject")
-    @ApiResponse(responseCode = "201", description = "Elective AcademicCurriculumService created", content = @Content)
+    @Operation(summary = "Create Elective Subject", description = "Creates a new elective subject")
+    @ApiResponse(responseCode = "201", description = "Elective Subject created", content = @Content)
     @PostMapping
     public ResponseEntity<ResponseWrapper<Void>> createElectiveSubject(@Valid @RequestBody ElectiveSubjectInsertDTO areaInsertDTO) {
         subjectService.createSubject(areaInsertDTO);
-        return ResponseEntity.ok(ResponseWrapper.created(null,"Elective AcademicCurriculumService"));
+        return ResponseEntity.ok(ResponseWrapper.created("Elective Subject"));
     }
 
-    @Operation(summary = "Update Elective AcademicCurriculumService", description = "Updates an existing elective subject by ID")
+    @Operation(summary = "Update Elective Subject", description = "Updates an existing elective subject by ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Elective AcademicCurriculumService updated", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Elective AcademicCurriculumService not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Elective Subject updated", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Elective Subject not found", content = @Content)
     })
     @PutMapping("/{subjectId}")
     public ResponseEntity<ResponseWrapper<Void>> updateElectiveSubject(@Valid @RequestBody ElectiveSubjectInsertDTO electiveInsertDTO,
                                                                        @PathVariable Long subjectId) {
         subjectService.updateSubject(electiveInsertDTO, subjectId);
-        return ResponseEntity.ok(ResponseWrapper.updated(null,"Elective AcademicCurriculumService"));
+        return ResponseEntity.ok(ResponseWrapper.updated("Elective Subject"));
     }
 
-    @Operation(summary = "Delete Elective AcademicCurriculumService", description = "Deletes an elective subject by ID")
+    @Operation(summary = "Delete Elective Subject", description = "Deletes an elective subject by ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Elective AcademicCurriculumService deleted", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Elective AcademicCurriculumService not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Elective Subject deleted", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Elective Subject not found", content = @Content)
     })
     @DeleteMapping("/{subjectId}")
     public ResponseEntity<ResponseWrapper<Void>> deleteElectiveSubjectById(@PathVariable Long subjectId) {
         subjectService.deleteSubject(subjectId);
-        return ResponseEntity.ok(ResponseWrapper.deleted(null,"Elective AcademicCurriculumService"));
+        return ResponseEntity.ok(ResponseWrapper.deleted("Elective Subject"));
     }
 }

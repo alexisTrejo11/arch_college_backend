@@ -14,6 +14,6 @@ public interface AreaRepository extends JpaRepository<Area, Long> {
             "LEFT JOIN FETCH a.obligatorySubjects os " +
             "LEFT JOIN FETCH a.electiveSubjects es " +
             "WHERE a.id = :areaId")
-    Page<Area> findByIdWithSubjects(Long areaId, Pageable pageable);
+    Optional<Area> findByIdWithSubjects(Long areaId);
 
 }

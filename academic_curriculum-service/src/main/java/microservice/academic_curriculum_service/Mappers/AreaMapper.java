@@ -7,7 +7,7 @@ import microservice.academic_curriculum_service.Model.Career.Area;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",  uses = {ElectiveSubjectMapper.class, ObligatorySubjectMapper.class})
 public interface AreaMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -17,8 +17,8 @@ public interface AreaMapper {
 
     AreaDTO entityToDTO(Area area);
 
-    @Mapping(target = "ordinarySubjects", ignore = true)
-    @Mapping(target = "electiveSubjects", ignore = true)
+    @Mapping(target = "ordinarySubjects", source = "ordinarySubjects")
+    @Mapping(target = "electiveSubjects", source = "electiveSubjects")
     AreaWithRelationsDTO entityToDTOWithRelations(Area area);
 
 }

@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import microservice.common_classes.DTOs.ProfessionalLine.ProfessionalLineDTO;
 import microservice.common_classes.DTOs.ProfessionalLine.ProfessionalLineInsertDTO;
 import microservice.common_classes.Utils.Response.ResponseWrapper;
-import microservice.common_classes.Utils.Response.Result;
 import microservice.academic_curriculum_service.Service.ProfessionalLineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,11 +20,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("/v1/api/professional_lines")
 public class ProfessionalLineController {
 
-    private final ProfessionalLineService areaService;
+    private final ProfessionalLineService professionalLineService;
 
     @Autowired
-    public ProfessionalLineController(ProfessionalLineService areaService) {
-        this.areaService = areaService;
+    public ProfessionalLineController(ProfessionalLineService professionalLineService) {
+        this.professionalLineService = professionalLineService;
     }
 
     @Operation(summary = "Get Professional Line by ID", description = "Fetches a professional line by its ID")
@@ -35,12 +34,9 @@ public class ProfessionalLineController {
     })
     @GetMapping("/{professionalLineId}")
     public ResponseEntity<ResponseWrapper<ProfessionalLineDTO>> getProfessionalLineById(@PathVariable Long professionalLineId) {
-        Result<ProfessionalLineDTO> areaResult = areaService.getProfessionalLineById(professionalLineId);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Professional Line", "ID", professionalLineId));
-        }
-
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Professional Line", "ID", professionalLineId));
+        return professionalLineService.getProfessionalLineById(professionalLineId)
+                .map(professionalLine -> ResponseEntity.ok(ResponseWrapper.found(professionalLine, "Professional Line", "ID", professionalLineId)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Professional Line", "ID", professionalLineId)));
     }
 
     @Operation(summary = "Get Professional Line by Name", description = "Fetches a professional line by name")
@@ -50,19 +46,16 @@ public class ProfessionalLineController {
     })
     @GetMapping("/name/{name}")
     public ResponseEntity<ResponseWrapper<ProfessionalLineDTO>> getProfessionalLineByName(@PathVariable String name) {
-        Result<ProfessionalLineDTO> areaResult = areaService.getProfessionalLineByName(name);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Professional Line", "name", name));
-        }
-
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Professional Line", "name", name));
+        return professionalLineService.getProfessionalLineByName(name)
+                .map(professionalLine -> ResponseEntity.ok(ResponseWrapper.found(professionalLine, "Professional Line", "name", name)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Professional Line", "name", name)));
     }
 
     @Operation(summary = "Get All Professional Lines", description = "Fetches all professional lines")
     @ApiResponse(responseCode = "200", description = "Professional Lines found", content = @Content(schema = @Schema(implementation = List.class)))
     @GetMapping("/all")
     public ResponseEntity<ResponseWrapper<List<ProfessionalLineDTO>>> getAllProfessionalLines() {
-        List<ProfessionalLineDTO> professionalLines = areaService.getAllProfessionalLines();
+        List<ProfessionalLineDTO> professionalLines = professionalLineService.getAllProfessionalLines();
 
         return ResponseEntity.ok(ResponseWrapper.found(professionalLines, "Professional Lines"));
     }
@@ -71,7 +64,7 @@ public class ProfessionalLineController {
     @ApiResponse(responseCode = "201", description = "Professional Line created", content = @Content)
     @PostMapping
     public ResponseEntity<ResponseWrapper<Void>> createProfessionalLine(@Valid @RequestBody ProfessionalLineInsertDTO areaInsertDTO) {
-        areaService.createProfessionalLine(areaInsertDTO);
+        professionalLineService.createProfessionalLine(areaInsertDTO);
 
         return ResponseEntity.ok(ResponseWrapper.created(null, "Professional Line"));
     }
@@ -84,7 +77,7 @@ public class ProfessionalLineController {
     @PutMapping("/{professionalLineId}")
     public ResponseEntity<ResponseWrapper<Void>> updateProfessionalLine(@Valid @RequestBody ProfessionalLineInsertDTO areaInsertDTO,
                                                                         @PathVariable Long professionalLineId) {
-        areaService.updateProfessionalLineName(areaInsertDTO, professionalLineId);
+        professionalLineService.updateProfessionalLineName(areaInsertDTO, professionalLineId);
 
         return ResponseEntity.ok(ResponseWrapper.updated(null, "Professional Line"));
     }
@@ -96,7 +89,7 @@ public class ProfessionalLineController {
     })
     @DeleteMapping("/{professionalLineId}")
     public ResponseEntity<ResponseWrapper<Void>> deleteProfessionalLineById(@PathVariable Long professionalLineId) {
-        areaService.deleteProfessionalLine(professionalLineId);
+        professionalLineService.deleteProfessionalLine(professionalLineId);
 
         return ResponseEntity.ok(ResponseWrapper.deleted(null, "Professional Line"));
     }

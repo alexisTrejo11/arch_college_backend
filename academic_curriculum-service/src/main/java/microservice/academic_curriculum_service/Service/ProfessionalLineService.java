@@ -5,11 +5,12 @@ import microservice.common_classes.DTOs.ProfessionalLine.ProfessionalLineInsertD
 import microservice.common_classes.Utils.Response.Result;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProfessionalLineService {
-    Result<ProfessionalLineDTO> getProfessionalLineById(Long professionalLineId);
-    Result<ProfessionalLineDTO> getProfessionalLineByIdWithSubjects(Long professionalLineId);
-    Result<ProfessionalLineDTO> getProfessionalLineByName(String name);
+    Optional<ProfessionalLineDTO> getProfessionalLineById(Long professionalLineId);
+    Optional<ProfessionalLineDTO> getProfessionalLineByIdWithSubjects(Long professionalLineId);
+    Optional<ProfessionalLineDTO> getProfessionalLineByName(String name);
     List<ProfessionalLineDTO> getAllProfessionalLines();
     void createProfessionalLine(ProfessionalLineInsertDTO professionalLineInsertDTO);
     void updateProfessionalLineName(ProfessionalLineInsertDTO professionalLineInsertDTO, Long professionalLineId);

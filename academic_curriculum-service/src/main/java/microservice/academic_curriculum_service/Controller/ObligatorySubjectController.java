@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/v1/api/subjects/obligatory")
@@ -42,12 +43,9 @@ public class ObligatorySubjectController {
     })
     @GetMapping("/{subjectId}")
     public ResponseEntity<ResponseWrapper<ObligatorySubjectDTO>> getObligatorySubjectById(@PathVariable Long subjectId) {
-        Result<ObligatorySubjectDTO> areaResult = subjectService.getSubjectById(subjectId);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Obligatory AcademicCurriculumService", "ID", subjectId));
-        }
-
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Obligatory AcademicCurriculumService", "ID", subjectId));
+        Optional<ObligatorySubjectDTO> subject = subjectService.getSubjectById(subjectId);
+        return subject.map(value -> ResponseEntity.ok(ResponseWrapper.found(value, "Obligatory AcademicCurriculumService", "ID", subjectId)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Obligatory AcademicCurriculumService", "ID", subjectId)));
     }
 
     @Operation(summary = "Get Obligatory Subjects by Area ID", description = "Fetches ordinary subjects by area ID")
@@ -81,13 +79,11 @@ public class ObligatorySubjectController {
 
     @GetMapping("/name/{name}")
     public ResponseEntity<ResponseWrapper<ObligatorySubjectDTO>> getObligatorySubjectByName(@PathVariable String name) {
-        Result<ObligatorySubjectDTO> areaResult = subjectService.getSubjectByName(name);
-        if (!areaResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("ObligatorySubject", "name", name));
-        }
-
-        return ResponseEntity.ok(ResponseWrapper.found(areaResult.getData(),"Obligatory AcademicCurriculumService", "name", name));
+        Optional<ObligatorySubjectDTO> subject = subjectService.getSubjectByName(name);
+        return subject.map(value -> ResponseEntity.ok(ResponseWrapper.found(value, "Obligatory AcademicCurriculumService", "name", name)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("ObligatorySubject", "name", name)));
     }
+
 
     @Operation(summary = "Get All Obligatory Subjects", description = "Fetches all ordinary subjects with pagination")
     @ApiResponse(responseCode = "200", description = "Obligatory Subjects found", content = @Content(schema = @Schema(implementation = Page.class)))

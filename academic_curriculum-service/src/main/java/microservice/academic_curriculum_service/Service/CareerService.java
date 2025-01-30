@@ -6,11 +6,12 @@ import microservice.common_classes.Utils.Response.Result;
 
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CareerService {
-    Result<CareerDTO> getCareerById(Long careerId);
-    Result<CareerDTO> getCareerByIdWithSubjects(Long careerId);
-    Result<CareerDTO> getCareerByName(String name);
+    Optional<CareerDTO> getCareerById(Long careerId);
+    Optional<CareerDTO> getCareerByIdWithSubjects(Long careerId);
+    Optional<CareerDTO> getCareerByName(String name);
     List<CareerDTO> getAllCareers();
     void createCareer(CareerInsertDTO careerInsertDTO);
     void updateCareer(CareerInsertDTO careerInsertDTO, Long careerId);

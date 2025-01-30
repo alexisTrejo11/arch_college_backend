@@ -2,6 +2,7 @@ package microservice.academic_curriculum_service.Service.Implementations;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import microservice.common_classes.DTOs.Area.AreaDTO;
 import microservice.common_classes.DTOs.Area.AreaInsertDTO;
 import microservice.common_classes.DTOs.Area.AreaWithRelationsDTO;
@@ -18,33 +19,22 @@ import microservice.academic_curriculum_service.Service.AreaService;
 import microservice.academic_curriculum_service.Service.SubjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
 public class AreaServiceImpl implements AreaService {
+
     private final AreaRepository areaRepository;
     private final AreaMapper areaMapper;
     private final SubjectService<ObligatorySubjectDTO, ObligatorySubjectInsertDTO> ordinarySubjectService;
     private final SubjectService<ElectiveSubjectDTO, ElectiveSubjectInsertDTO> electiveSubjectService;
 
-    @Autowired
-    public AreaServiceImpl(AreaRepository areaRepository,
-                           AreaMapper areaMapper,
-                           SubjectService<ObligatorySubjectDTO, ObligatorySubjectInsertDTO> ordinarySubjectService,
-                           SubjectService<ElectiveSubjectDTO, ElectiveSubjectInsertDTO> electiveSubjectService) {
-        this.areaRepository = areaRepository;
-        this.areaMapper = areaMapper;
-        this.ordinarySubjectService = ordinarySubjectService;
-        this.electiveSubjectService = electiveSubjectService;
-    }
-
+    
     @Override
     @Cacheable(value = "areaByIdCache", key = "#areaId")
     public Result<AreaDTO> getAreaById(Long areaId) {
@@ -56,11 +46,10 @@ public class AreaServiceImpl implements AreaService {
     @Override
     @Cacheable(value = "areaWithSubjectsCache", key = "#areaId")
     public AreaWithRelationsDTO getAreaByIdWithSubjects(Long areaId, Pageable pageable) {
-        Area area = areaRepository.findById(areaId)
+        Area area = areaRepository.findByIdWithSubjects(areaId)
                 .orElseThrow(() -> new EntityNotFoundException("Area with ID " + areaId + " not found"));
 
-        AreaWithRelationsDTO areaWithRelationsDTO = areaMapper.entityToDTOWithRelations(area);
-        return fetchSubjectsAsync(areaWithRelationsDTO, areaId, pageable).join();
+        return areaMapper.entityToDTOWithRelations(area);
     }
 
     @Override
@@ -102,20 +91,5 @@ public class AreaServiceImpl implements AreaService {
            throw new EntityNotFoundException("Area with ID " + areaId + " not found");
        }
        areaRepository.deleteById(areaId);
-    }
-
-    @Async("TaskExecutor")
-    private CompletableFuture<AreaWithRelationsDTO> fetchSubjectsAsync(AreaWithRelationsDTO areaWithRelationsDTO, Long areaId, Pageable pageable) {
-        CompletableFuture<Page<ObligatorySubjectDTO>> ordinarySubjectDTOS =
-                CompletableFuture.supplyAsync(() -> ordinarySubjectService.getSubjectsByFilterPageable(areaId, "area", pageable));
-        CompletableFuture<Page<ElectiveSubjectDTO>> electiveSubjectDTOS =
-                CompletableFuture.supplyAsync(() -> electiveSubjectService.getSubjectsByFilterPageable(areaId, "area", pageable));
-
-        return CompletableFuture.allOf(ordinarySubjectDTOS, electiveSubjectDTOS)
-                .thenApply(v -> {
-                    areaWithRelationsDTO.setOrdinarySubjects(ordinarySubjectDTOS.join());
-                    areaWithRelationsDTO.setElectiveSubjects(electiveSubjectDTOS.join());
-                    return areaWithRelationsDTO;
-                });
     }
 }

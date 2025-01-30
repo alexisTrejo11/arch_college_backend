@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import microservice.common_classes.DTOs.Carrer.CareerDTO;
 import microservice.common_classes.DTOs.Carrer.CareerInsertDTO;
 import microservice.common_classes.Utils.Response.ResponseWrapper;
-import microservice.common_classes.Utils.Response.Result;
 import microservice.academic_curriculum_service.Service.CareerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,11 +38,10 @@ public class CareerController {
     })
     @GetMapping("/{careerId}")
     public ResponseEntity<ResponseWrapper<CareerDTO>> getCareerById(@PathVariable Long careerId) {
-        Result<CareerDTO> careerResult = careerService.getCareerById(careerId);
-        if (!careerResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Career", "ID", careerId));
-        }
-        return ResponseEntity.ok(ResponseWrapper.found( careerResult.getData(),"Career", "ID", careerId));
+        Optional<CareerDTO> careerOptional = careerService.getCareerById(careerId);
+        return careerOptional
+                .map(career -> ResponseEntity.ok(ResponseWrapper.found(career, "Career", "ID", careerId)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Career", "ID", careerId)));
     }
 
     @Operation(summary = "Get Career by Name", description = "Fetches the career with the specified name")
@@ -52,19 +51,18 @@ public class CareerController {
     })
     @GetMapping("/name/{name}")
     public ResponseEntity<ResponseWrapper<CareerDTO>> getCareerByName(@PathVariable String name) {
-        Result<CareerDTO> careerResult = careerService.getCareerByName(name);
-        if (!careerResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Career", "name", name));
-        }
-        return ResponseEntity.ok(ResponseWrapper.found(careerResult.getData(),"Career", "name", name));
+        Optional<CareerDTO> careerOptional = careerService.getCareerByName(name);
+        return careerOptional
+                .map(career -> ResponseEntity.ok(ResponseWrapper.found(career, "Career", "name", name)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Career", "name", name)));
     }
 
     @Operation(summary = "Get All Careers", description = "Fetches all available careers")
     @ApiResponse(responseCode = "200", description = "Careers found", content = @Content(schema = @Schema(implementation = CareerDTO.class)))
     @GetMapping("/all")
     public ResponseEntity<ResponseWrapper<List<CareerDTO>>> getAllCareers() {
-        List<CareerDTO> career = careerService.getAllCareers();
-        return ResponseEntity.ok(ResponseWrapper.found(career,"Careers"));
+        List<CareerDTO> careers = careerService.getAllCareers();
+        return ResponseEntity.ok(ResponseWrapper.found(careers, "Careers"));
     }
 
     @Operation(summary = "Create Career", description = "Creates a new career entry")
@@ -72,7 +70,7 @@ public class CareerController {
     @PostMapping
     public ResponseEntity<ResponseWrapper<Void>> createCareer(@Valid @RequestBody CareerInsertDTO careerInsertDTO) {
         careerService.createCareer(careerInsertDTO);
-        return ResponseEntity.ok(ResponseWrapper.created(null, "Career"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(null, "Career"));
     }
 
     @Operation(summary = "Update Career", description = "Updates an existing career by ID")

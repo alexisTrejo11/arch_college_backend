@@ -1,4 +1,4 @@
-package microservice.academic_curriculum_service.DTOs.SocialNetwork;
+package microservice.academic_curriculum_service.DTOs;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

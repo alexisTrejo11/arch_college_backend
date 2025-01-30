@@ -117,10 +117,4 @@ public class AreaController {
         return ResponseEntity.ok(ResponseWrapper.deleted("Area"));
     }
 
-    @GetMapping("/test-elk")
-    public String testElk() {
-        log.error("Hello ELK");
-
-        return "Hello ELK";
-    }
 }
