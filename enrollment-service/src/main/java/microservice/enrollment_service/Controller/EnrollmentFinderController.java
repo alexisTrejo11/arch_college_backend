@@ -1,6 +1,8 @@
 package microservice.enrollment_service.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,28 +17,41 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/v1/api/group-enrollments")
 @RequiredArgsConstructor
-@Tag(name = "Enrollment Finder API", description = "Endpoints for fetching enrollment data")
+@Tag(name = "Enrollment Manager", description = "Endpoints for fetching enrollment data")
 public class EnrollmentFinderController {
 
     private final EnrollmentFinderService enrollmentFinderService;
 
     @GetMapping("/{enrollmentId}")
-    @Operation(summary = "Get enrollment by ID", description = "Fetches an enrollment by its ID.")
+    @Operation(
+            summary = "Get enrollment by ID",
+            description = "Retrieves detailed information about a specific enrollment using its ID"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "GroupEnrollment data successfully fetched"),
-            @ApiResponse(responseCode = "404", description = "GroupEnrollment not found")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Enrollment data successfully retrieved",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EnrollmentDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Enrollment not found with the given ID",
+                    content = @Content
+            )
     })
     public ResponseEntity<ResponseWrapper<EnrollmentDTO>> getEnrollmentById(@PathVariable Long enrollmentId) {
-        Result<EnrollmentDTO> enrollmentResult = enrollmentFinderService.getById(enrollmentId);
-        if (!enrollmentResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound(enrollmentResult.getErrorMessage()));
-        }
+        Optional<EnrollmentDTO> enrollment = enrollmentFinderService.getById(enrollmentId);
+        return enrollment.map(enrollmentDTO -> ResponseEntity.ok(ResponseWrapper.ok(enrollmentDTO, "Enrollment data successfully fetched")))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseWrapper.notFound("Enrollment not found")));
 
-        return ResponseEntity.ok(ResponseWrapper.ok(enrollmentResult.getData(), "GroupEnrollment data successfully fetched"));
     }
 
     @GetMapping("/by-student/{studentAccountNumber}")

@@ -1,9 +1,11 @@
 package microservice.enrollment_service.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -28,7 +30,7 @@ import java.util.List;
 @RestController
 @RequestMapping("v1/api/group-enrollments/students")
 @RequiredArgsConstructor
-@Tag(name = "Student Enrollment API", description = "Endpoints for managing student group enrollments")
+@Tag(name = "Student Enrollment Manager", description = "Endpoints for managing student group enrollments")
 public class StudentEnrollmentController {
 
     private final EnrollmentFinderService enrollmentFinderService;
@@ -37,12 +39,32 @@ public class StudentEnrollmentController {
     private final EnrollmentRelationshipService enrollmentRelationshipService;
     private final JWTSecurity jwtSecurity;
 
-    @GetMapping("/my-enrollments")
-    @Operation(summary = "Get my enrollments", description = "Fetches all enrollments associated with the logged-in student's account number.")
+    @Operation(
+            summary = "Get current student's enrollments",
+            description = "Retrieves all active enrollments for the authenticated student",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Enrollments successfully retrieved"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Enrollments successfully retrieved",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid or expired JWT token",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "JWT token missing or invalid format",
+                    content = @Content
+            )
     })
+    @GetMapping("/my-enrollments")
     public ResponseEntity<ResponseWrapper<List<EnrollmentDTO>>> getMyEnrollments(HttpServletRequest request) {
         String accountNumber = jwtSecurity.getAccountNumberFromToken(request);
 
@@ -51,16 +73,45 @@ public class StudentEnrollmentController {
         return ResponseEntity.ok(ResponseWrapper.found(enrollments, "Enrollments"));
     }
 
-    @PostMapping
-    @Operation(summary = "Make an enrollment", description = "Creates a new group enrollment for the logged-in student.")
+    @Operation(
+            summary = "Student new enrollment",
+            description = "Enrolls the authenticated student in a specific group",
+            security = @SecurityRequirement(name = "bearerAuth") // Aplica la autenticación Bearer
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Enrollment successfully created"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data"),
-            @ApiResponse(responseCode = "409", description = "Enrollment validation failed or group does not exist")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Enrollment successfully created",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid enrollment data or group does not exist",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid or expired JWT token",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Student not eligible or group is full",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            )
     })
-    public ResponseEntity<ResponseWrapper<Void>> makeAnEnrollment(
-            @Valid @RequestBody EnrollmentInsertDTO enrollmentInsertDTO,
-            HttpServletRequest request) {
+    @PostMapping
+    public ResponseEntity<ResponseWrapper<Void>> makeAnEnrollment(@Valid @RequestBody EnrollmentInsertDTO enrollmentInsertDTO,
+                                                                  HttpServletRequest request) {
         String accountNumber = jwtSecurity.getAccountNumberFromToken(request);
 
         Result<Group> groupResult = enrollmentRelationshipService.validateExistingGroup(enrollmentInsertDTO);
@@ -80,17 +131,38 @@ public class StudentEnrollmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created("Group Enrollment successfully created"));
     }
 
-    @DeleteMapping("/group/{groupKey}/subject/{subjectKey}")
-    @Operation(summary = "Delete an enrollment", description = "Deletes an existing group enrollment for the logged-in student.")
+    @Operation(
+            summary = "Delete student enrollment",
+            description = "Removes the authenticated student's enrollment from a specific group and subject",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Enrollment successfully deleted"),
-            @ApiResponse(responseCode = "404", description = "Enrollment not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Enrollment successfully deleted",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid or expired JWT token",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Enrollment not found for the given group and subject",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseWrapper.class)
+                    )
+            )
     })
-    public ResponseEntity<ResponseWrapper<Void>> deleteAnEnrollment(
-            @Valid @PathVariable String groupKey,
-            @PathVariable String subjectKey,
-            HttpServletRequest request) {
+    @DeleteMapping("/{groupKey}/{subjectKey}")
+    public ResponseEntity<ResponseWrapper<Void>> deleteAnEnrollment(@Valid @PathVariable String groupKey,
+                                                                    @PathVariable String subjectKey,
+                                                                    HttpServletRequest request) {
         String accountNumber = jwtSecurity.getAccountNumberFromToken(request);
 
         Result<Void> deleteResult = enrollmentCommandService.deleteEnrollment(groupKey, subjectKey, accountNumber);

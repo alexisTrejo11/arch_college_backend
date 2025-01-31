@@ -2,6 +2,7 @@ package microservice.enrollment_service.Service.Implementation;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import microservice.common_classes.DTOs.Enrollment.EnrollmentInsertDTO;
 import microservice.common_classes.Utils.Response.Result;
@@ -21,15 +22,12 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EnrollmentEnrollmentCommandServiceImpl implements EnrollmentCommandService {
 
     private final EnrollmentRepository enrollmentRepository;
     private final String CURRENT_SCHOOL_PERIOD = AcademicData.getCurrentSchoolPeriod();
 
-    @Autowired
-    public EnrollmentEnrollmentCommandServiceImpl(EnrollmentRepository enrollmentRepository) {
-        this.enrollmentRepository = enrollmentRepository;
-    }
 
     // TODO: IMPLEMENT ELECTIVE CREATION
     @Override
@@ -38,18 +36,7 @@ public class EnrollmentEnrollmentCommandServiceImpl implements EnrollmentCommand
         Student student = enrollmentRelationship.getStudent();
         ObligatorySubject subject = enrollmentRelationship.getObligatorySubject();
 
-        Enrollment groupEnrollment = Enrollment.builder()
-                .enrollmentDate(LocalDateTime.now())
-                .groupId(enrollmentRelationship.getGroup().getId())
-                .groupKey(enrollmentInsertDTO.getGroupKey())
-                .studentAccountNumber(student.getAccountNumber())
-                .subjectId(subject.getId())
-                .subjectCredits(subject.getCredits())
-                .subjectName(subject.getName())
-                .subjectType(SubjectType.OBLIGATORY)
-                .subjectKey(enrollmentInsertDTO.getSubjectKey())
-                .schoolPeriod(CURRENT_SCHOOL_PERIOD)
-                .build();
+        Enrollment groupEnrollment = buildEnrollment(enrollmentRelationship, enrollmentInsertDTO);
 
         enrollmentRepository.save(groupEnrollment);
 
@@ -83,5 +70,24 @@ public class EnrollmentEnrollmentCommandServiceImpl implements EnrollmentCommand
         enrollmentRepository.deleteById(enrollmentId);
 
         log.info("Enrollment deleted: ID={}", enrollmentId);
+    }
+
+    private Enrollment buildEnrollment(EnrollmentRelationship enrollmentRelationship,
+                                      EnrollmentInsertDTO enrollmentInsertDTO) {
+        Student student = enrollmentRelationship.getStudent();
+        ObligatorySubject subject = enrollmentRelationship.getObligatorySubject();
+
+        return Enrollment.builder()
+                .enrollmentDate(LocalDateTime.now())
+                .groupId(enrollmentRelationship.getGroup().getId())
+                .groupKey(enrollmentInsertDTO.getGroupKey())
+                .studentAccountNumber(student.getAccountNumber())
+                .subjectId(subject.getId())
+                .subjectCredits(subject.getCredits())
+                .subjectName(subject.getName())
+                .subjectType(SubjectType.OBLIGATORY)
+                .subjectKey(enrollmentInsertDTO.getSubjectKey())
+                .schoolPeriod(CURRENT_SCHOOL_PERIOD)
+                .build();
     }
 }

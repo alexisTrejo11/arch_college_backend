@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@Tag(name = "Groups API", description = "Endpoints for finding groups by various parameters and filters")
+@Tag(name = "Groups API", description = "Endpoints for finding and retrieving groups using various search criteria")
 @RestController
 @RequestMapping("/v1/api/finder/groups")
 @RequiredArgsConstructor
@@ -32,69 +32,159 @@ public class GroupFinderController {
 
     private final GroupFinderService groupFinderService;
 
-    @Operation(summary = "Get Group by ID", description = "Retrieve a group by its unique identifier")
-    @ApiResponse(responseCode = "200", description = "Group found", content = @Content(schema = @Schema(implementation = GroupDTO.class)))
-    @ApiResponse(responseCode = "404", description = "Group not found")
+    @Operation(
+            summary = "Get Group by ID",
+            description = "Retrieves detailed information about a specific group using its unique numeric identifier",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Group found successfully",
+                            content = @Content(schema = @Schema(implementation = GroupDTO.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Group not found with specified ID",
+                            content = @Content(schema = @Schema(implementation = ResponseWrapper.class)))
+            }
+    )
     @GetMapping("/{groupId}")
-    public ResponseEntity<ResponseWrapper<GroupDTO>> getGroupById(@PathVariable Long groupId) {
+    public ResponseEntity<ResponseWrapper<GroupDTO>> getGroupById(
+            @Parameter(description = "Numeric ID of the group to retrieve", required = true, example = "12345")
+            @PathVariable Long groupId) {
+
         Optional<GroupDTO> groupResult = groupFinderService.getGroupById(groupId);
         return groupResult.map(groupDTO -> ResponseEntity.ok(ResponseWrapper.found(groupDTO, "Group")))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ResponseWrapper.notFound("Group with Id " + groupId + " not found")));
+                        .body(ResponseWrapper.notFound("Group with ID " + groupId + " not found")));
     }
 
-    @Operation(summary = "Get Group by Key", description = "Retrieve a group by its unique key")
+    @Operation(
+            summary = "Get Group by Key",
+            description = "Retrieves a group using its unique alphanumeric key identifier",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Group found successfully",
+                            content = @Content(schema = @Schema(implementation = GroupDTO.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Group not found with specified key",
+                            content = @Content(schema = @Schema(implementation = ResponseWrapper.class)))
+            }
+    )
     @GetMapping("/key/{key}")
-    public ResponseEntity<ResponseWrapper<GroupDTO>> getCurrentGroupByKey(@PathVariable String key) {
+    public ResponseEntity<ResponseWrapper<GroupDTO>> getCurrentGroupByKey(
+            @Parameter(description = "Unique key identifier of the group", required = true, example = "GRP-MATH101-2023-A")
+            @PathVariable String key) {
+
         Optional<GroupDTO> groupResult = groupFinderService.getCurrentGroupByKey(key);
         return groupResult.map(groupDTO -> ResponseEntity.ok(ResponseWrapper.found(groupDTO, "Group")))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ResponseWrapper.notFound("Group with Key " + key + " not found")));
+                        .body(ResponseWrapper.notFound("Group with key " + key + " not found")));
     }
 
-    @Operation(summary = "Get Groups by IDs")
+    @Operation(
+            summary = "Get Multiple Groups by IDs",
+            description = "Retrieves multiple groups using a list of numeric identifiers",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Groups found successfully",
+                            content = @Content(schema = @Schema(implementation = List.class)))
+            }
+    )
     @GetMapping("/by-ids")
-    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getGroupsByIds(@RequestParam List<Long> idList) {
+    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getGroupsByIds(
+            @Parameter(description = "List of group IDs to retrieve", required = true, example = "[101, 202, 303]")
+            @RequestParam List<Long> idList) {
+
         List<GroupDTO> groups = groupFinderService.getGroupsByIds(idList);
-        return ResponseEntity.ok(ResponseWrapper.found(groups, "Groups"));
+        return ResponseEntity.ok(ResponseWrapper.found(groups, groups.size() + " groups found"));
     }
 
-    @Operation(summary = "Find Groups with Dynamic Filters")
+    @Operation(
+            summary = "Search Groups with Filters",
+            description = "Advanced search for groups using multiple filter criteria with pagination support",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Groups matching criteria found",
+                            content = @Content(schema = @Schema(implementation = Page.class)))
+            }
+    )
     @GetMapping("/by")
-    public ResponseEntity<ResponseWrapper<Page<GroupDTO>>> getGroups(@Valid @ModelAttribute GroupFilterRequestDTO filterRequest) {
-        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), filterRequest.getSort());
+    public ResponseEntity<ResponseWrapper<Page<GroupDTO>>> getGroups(
+            @Valid @ModelAttribute GroupFilterRequestDTO filterRequest,
+            @Parameter(hidden = true) Sort sort) {
 
-        GroupFinderFilter groupFinderFilter = new GroupFinderFilter()
+        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
+        GroupFinderFilter filter = new GroupFinderFilter()
                 .withSchoolPeriod(filterRequest.getSchoolPeriod())
                 .withSubjectType(filterRequest.getSubjectType())
                 .withSubjectKey(filterRequest.getSubjectKey())
                 .withClassroom(filterRequest.getClassroom());
 
-        Page<GroupDTO> groups = groupFinderService.findGroupsWithFilters(groupFinderFilter, pageable);
-        return ResponseEntity.ok(ResponseWrapper.ok(groups, "Groups successfully fetched"));
+        Page<GroupDTO> groups = groupFinderService.findGroupsWithFilters(filter, pageable);
+        return ResponseEntity.ok(ResponseWrapper.ok(groups, groups.getNumberOfElements() + " groups found"));
     }
 
-    @Operation(summary = "Get Current Groups")
+    @Operation(
+            summary = "Get Active Groups",
+            description = "Retrieves paginated list of currently active groups",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Active groups retrieved successfully",
+                            content = @Content(schema = @Schema(implementation = Page.class)))
+            }
+    )
     @GetMapping("/current")
     public ResponseEntity<ResponseWrapper<Page<GroupDTO>>> getCurrentGroups(
+            @Parameter(description = "Page number for pagination (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Number of items per page", example = "20")
             @RequestParam(defaultValue = "10") int size) {
+
         Pageable pageable = PageRequest.of(page, size);
         Page<GroupDTO> groups = groupFinderService.getCurrentGroups(pageable);
-        return ResponseEntity.ok(ResponseWrapper.found(groups, "Current Groups"));
+        return ResponseEntity.ok(ResponseWrapper.found(groups, "Current active groups"));
     }
 
-    @Operation(summary = "Get Current Groups by Teacher ID")
+    @Operation(
+            summary = "Get Teacher's Active Groups",
+            description = "Retrieves all active groups associated with a specific teacher",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Teacher's groups found successfully",
+                            content = @Content(schema = @Schema(implementation = List.class)))
+            }
+    )
     @GetMapping("/current/by-teacher/{teacherId}")
-    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getCurrentGroupsByTeacherId(@PathVariable Long teacherId) {
+    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getCurrentGroupsByTeacherId(
+            @Parameter(description = "Numeric ID of the teacher", required = true, example = "54321")
+            @PathVariable Long teacherId) {
+
         List<GroupDTO> groups = groupFinderService.getCurrentGroupByTeacherId(teacherId);
-        return ResponseEntity.ok(ResponseWrapper.found(groups, "Groups by Teacher ID"));
+        return ResponseEntity.ok(ResponseWrapper.found(groups, groups.size() + " groups found for teacher"));
     }
 
-    @Operation(summary = "Get Current Groups by Building")
+    @Operation(
+            summary = "Get Groups by Building",
+            description = "Retrieves active groups located in a specific building",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Building groups found successfully",
+                            content = @Content(schema = @Schema(implementation = List.class)))
+            }
+    )
     @GetMapping("/current/by-building/{buildingLetter}")
-    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getCurrentGroupsByBuilding(@PathVariable char buildingLetter) {
-        List<GroupDTO> groups = groupFinderService.getCurrentGroupsByClassroomPrefix(String.valueOf(buildingLetter));
-        return ResponseEntity.ok(ResponseWrapper.found(groups, "Groups by Building"));
+    public ResponseEntity<ResponseWrapper<List<GroupDTO>>> getCurrentGroupsByBuilding(
+            @Parameter(description = "Building identifier (single character)", example = "B")
+            @PathVariable String buildingLetter) {
+
+        List<GroupDTO> groups = groupFinderService.getCurrentGroupsByClassroomPrefix(buildingLetter);
+        return ResponseEntity.ok(ResponseWrapper.found(groups, groups.size() + " groups in building " + buildingLetter));
     }
 }

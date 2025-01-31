@@ -1,6 +1,7 @@
 package microservice.enrollment_service.Config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import microservice.common_classes.JWT.JWTAuthenticationFilter;
 import microservice.common_classes.JWT.JWTSecurity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +18,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final JWTSecurity jwtSecurity;
+    private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    public SecurityConfig(JWTSecurity jwtSecurity) {
-        this.jwtSecurity = jwtSecurity;
+    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -31,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtSecurity, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(httpBasic ->
                         httpBasic
                                 .authenticationEntryPoint((request, response, authException) -> {

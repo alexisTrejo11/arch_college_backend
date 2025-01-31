@@ -1,7 +1,10 @@
 package microservice.schedule_service.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +13,7 @@ import microservice.common_classes.DTOs.Group.GroupDTO;
 import microservice.common_classes.DTOs.Group.ObligatoryGroupInsertDTO;
 import microservice.common_classes.Utils.Response.ResponseWrapper;
 import microservice.common_classes.Utils.Response.Result;
+import microservice.schedule_service.Documentation.SwaggerExamples;
 import microservice.schedule_service.Models.GroupRelationshipsDTO;
 import microservice.schedule_service.Service.GroupServices.Implementation.GroupCreationService;
 import microservice.schedule_service.Service.GroupServices.Implementation.GroupRelationshipService;
@@ -17,14 +21,9 @@ import microservice.schedule_service.Service.ScheduleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.CompletableFuture;
-
-@Tag(name = "Groups API", description = "Endpoints for managing groups")
+@Tag(name = "Groups Manager", description = "Endpoints for managing groups")
 @RestController
 @RequestMapping("/v1/api/groups")
 @RequiredArgsConstructor
@@ -34,38 +33,98 @@ public class GroupCreationController {
     private final GroupRelationshipService groupRelationshipService;
     private final ScheduleService scheduleService;
 
-    @Operation(summary = "Create Group", description = "Create a new group with specified details")
-    @ApiResponse(responseCode = "201", description = "Group created successfully")
-    @ApiResponse(responseCode = "409", description = "Conflict in group schedule")
+    @Operation(
+            summary = "Create Obligatory Group",
+            description = "Create a new obligatory group with the specified details",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Group created successfully",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.OBLIGATORY_GROUP_CREATED_RESPONSE)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "409",
+                            description = "Conflict in group schedule",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.CONFLICT_RESPONSE)
+                            )
+                    )
+            }
+    )
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/obligatory")
-    public ResponseEntity<ResponseWrapper<GroupDTO>> createObligatoryGroup(@Valid @RequestBody ObligatoryGroupInsertDTO OBligatoryGroupInsertDTO) {
-        Result<GroupRelationshipsDTO> relationshipsResult = groupRelationshipService.validateAndGetRelationships(OBligatoryGroupInsertDTO);
+    public ResponseEntity<ResponseWrapper<GroupDTO>> createObligatoryGroup(
+            @Valid @RequestBody ObligatoryGroupInsertDTO obligatoryGroupInsertDTO) {
+
+        Result<GroupRelationshipsDTO> relationshipsResult = groupRelationshipService.validateAndGetRelationships(obligatoryGroupInsertDTO);
         if (!relationshipsResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseWrapper.badRequest(relationshipsResult.getErrorMessage()));
         }
 
-        Result<Void> classroomScheduleResult = scheduleService.validateClassroomSchedule(OBligatoryGroupInsertDTO.getClassroom(), OBligatoryGroupInsertDTO.getSchedule(), null);
+        Result<Void> classroomScheduleResult = scheduleService.validateClassroomSchedule(obligatoryGroupInsertDTO.getClassroom(), obligatoryGroupInsertDTO.getSchedule(), null);
         if (!classroomScheduleResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(classroomScheduleResult.getErrorMessage()));
         }
 
-        Result<Void> teacherScheduleResult = scheduleService.validateTeachersSchedule(OBligatoryGroupInsertDTO.getTeacherIds(), OBligatoryGroupInsertDTO.getSchedule(), null);
+        Result<Void> teacherScheduleResult = scheduleService.validateTeachersSchedule(obligatoryGroupInsertDTO.getTeacherIds(), obligatoryGroupInsertDTO.getSchedule(), null);
         if (!teacherScheduleResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseWrapper.conflict(teacherScheduleResult.getErrorMessage()));
         }
 
-        GroupDTO group = groupCreationService.createGroup(OBligatoryGroupInsertDTO, relationshipsResult.getData());
-
+        GroupDTO group = groupCreationService.createGroup(obligatoryGroupInsertDTO, relationshipsResult.getData());
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(group,"Group"));
     }
 
-    @Operation(summary = "Create Group", description = "Create a new group with specified details")
-    @ApiResponse(responseCode = "201", description = "Group created successfully")
-    @ApiResponse(responseCode = "409", description = "Conflict in group schedule")
+    @Operation(
+            summary = "Create Elective Group",
+            description = "Create a new elective group with the specified details",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Group created successfully",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.ELECTIVE_GROUP_CREATED_RESPONSE)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "409",
+                            description = "Conflict in group schedule",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.CONFLICT_RESPONSE)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization is missing or invalid",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.UNAUTHORIZED)
+                            )
+
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "User does not have sufficient permissions",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(value = SwaggerExamples.FORBIDDEN)
+                            )
+                    )
+            }
+    )
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/elective")
-    public ResponseEntity<ResponseWrapper<GroupDTO>> createElectiveGroup(@Valid @RequestBody ElectiveGroupInsertDTO electiveGroupInsertDTO) {
+    public ResponseEntity<ResponseWrapper<GroupDTO>> createElectiveGroup(
+            @Valid @RequestBody ElectiveGroupInsertDTO electiveGroupInsertDTO) {
+
         Result<GroupRelationshipsDTO> relationshipsResult = groupRelationshipService.validateAndGetRelationships(electiveGroupInsertDTO);
         if (!relationshipsResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseWrapper.badRequest(relationshipsResult.getErrorMessage()));
@@ -82,7 +141,6 @@ public class GroupCreationController {
         }
 
         GroupDTO group = groupCreationService.createGroup(electiveGroupInsertDTO, relationshipsResult.getData());
-
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.created(group,"Group"));
     }
 }

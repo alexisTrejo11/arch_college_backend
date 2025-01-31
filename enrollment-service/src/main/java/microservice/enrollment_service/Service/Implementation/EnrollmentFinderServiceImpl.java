@@ -2,7 +2,6 @@ package microservice.enrollment_service.Service.Implementation;
 
 import lombok.extern.slf4j.Slf4j;
 import microservice.common_classes.DTOs.Enrollment.EnrollmentDTO;
-import microservice.common_classes.Utils.Response.Result;
 import microservice.common_classes.Utils.Schedule.AcademicData;
 import microservice.enrollment_service.Mappers.EnrollmentMapper;
 import microservice.enrollment_service.Model.Enrollment;
@@ -31,11 +30,9 @@ public class EnrollmentFinderServiceImpl implements EnrollmentFinderService {
 
     @Override
     @Cacheable(value = "enrollmentById", key = "#enrollmentId")
-    public Result<EnrollmentDTO> getById(Long enrollmentId) {
+    public Optional<EnrollmentDTO> getById(Long enrollmentId) {
         Optional<Enrollment> optionalEnrollment = enrollmentRepository.findById(enrollmentId);
-        return optionalEnrollment
-                .map(groupEnrollment -> Result.success(enrollmentMapper.entityToDTO(groupEnrollment)))
-                .orElseGet(() -> Result.error("Enrollment not found"));
+        return optionalEnrollment.map(enrollmentMapper::entityToDTO);
     }
 
 
