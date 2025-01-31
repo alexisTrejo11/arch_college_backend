@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import microservice.common_classes.DTOs.Student.StudentDTO;
 import microservice.common_classes.Utils.Response.ResponseWrapper;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 @RestController
 @RequestMapping("/v1/api/students")
 @RequiredArgsConstructor
+@Tag(name = "Student Manager", description = "API for managing student data")
 public class StudentFinderController {
 
     private final StudentFinderService studentFinderService;
