@@ -1,8 +1,8 @@
 package microservice.teacher_service.Service.Implementation;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import microservice.common_classes.DTOs.Teacher.TeacherDTO;
-import microservice.common_classes.Utils.Response.Result;
 import microservice.common_classes.Utils.Teacher.Title;
 import microservice.teacher_service.Mappers.TeacherMapper;
 import microservice.teacher_service.Model.Teacher;
@@ -29,16 +29,13 @@ public class TeacherFinderServiceImpl implements TeacherFinderService {
 
     @Override
     @Cacheable(value = "teacherById", key = "#teacherId")
-    public Result<TeacherDTO> getTeacherById(Long teacherId) {
-        Optional<Teacher> optionalTeacher = teacherRepository.findById(teacherId);
-        return optionalTeacher
-                .map(teacher -> Result.success(teacherMapper.entityToDTO(teacher)))
-                .orElseGet(() -> Result.error("Teacher not found"));
+    public Optional<TeacherDTO> getTeacherById(Long teacherId) {
+        return teacherRepository.findById(teacherId)
+                .map(teacherMapper::entityToDTO);
     }
 
-
     @Override
-    public Result<List<TeacherDTO>> getTeachersByIds(Set<Long> idSet) {
+    public List<TeacherDTO> getTeachersByIds(Set<Long> idSet) {
         List<Teacher> teachers = teacherRepository.findByIdIn(idSet);
 
         Set<Long> idsFounded = teachers.stream()
@@ -50,22 +47,17 @@ public class TeacherFinderServiceImpl implements TeacherFinderService {
                 .collect(Collectors.toSet());
 
         if (!missingIds.isEmpty()) {
-            String errorMessage = "Teachers not found for IDs: " + missingIds;
-            return Result.error(errorMessage);
+            throw new EntityNotFoundException("Teachers not found for IDs: " + missingIds);
         }
 
-        List<TeacherDTO> teacherDTOS = teachers.stream().map(teacherMapper::entityToDTO).toList();
-
-        return Result.success(teacherDTOS);
+        return teachers.stream().map(teacherMapper::entityToDTO).toList();
     }
 
     @Override
     @Cacheable(value = "teacherByAccountNumber", key = "#accountNumber")
-    public Result<TeacherDTO> getTeacherByAccountNumber(String accountNumber) {
-        Optional<Teacher> optionalTeacher = teacherRepository.findByAccountNumber(accountNumber);
-        return optionalTeacher
-                .map(teacher -> Result.success(teacherMapper.entityToDTO(teacher)))
-                .orElseGet(() -> Result.error("Teacher not found"));
+    public Optional<TeacherDTO> getTeacherByAccountNumber(String accountNumber) {
+        return teacherRepository.findByAccountNumber(accountNumber)
+                .map(teacherMapper::entityToDTO);
     }
 
     @Override
@@ -73,14 +65,12 @@ public class TeacherFinderServiceImpl implements TeacherFinderService {
     public Page<TeacherDTO> getAllTeachersSorted(Pageable pageable, String sortDirection, String sortBy) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-
         return teacherRepository.findAll(sortedPageable).map(teacherMapper::entityToDTO);
     }
 
     @Override
     @Cacheable(value = "teacherByTitle", key = "#title")
     public Page<TeacherDTO> getTeachersByTitlePageable(Title title, Pageable pageable) {
-        Page<Teacher> teacherPage = teacherRepository.findByTitle(title, pageable);
-        return teacherPage.map(teacherMapper::entityToDTO);
+        return teacherRepository.findByTitle(title, pageable).map(teacherMapper::entityToDTO);
     }
 }

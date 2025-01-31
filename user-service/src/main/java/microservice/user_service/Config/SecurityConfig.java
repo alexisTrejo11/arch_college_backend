@@ -32,7 +32,6 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtSecurity, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(httpBasic ->
                         httpBasic
                                 .authenticationEntryPoint((request, response, authException) -> {

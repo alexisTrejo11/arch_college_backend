@@ -7,13 +7,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface TeacherFinderService {
-    Result<TeacherDTO> getTeacherById(Long studentId);
-    Result<TeacherDTO> getTeacherByAccountNumber(String accountNumber);
+    Optional<TeacherDTO> getTeacherById(Long studentId);
+    Optional<TeacherDTO> getTeacherByAccountNumber(String accountNumber);
 
     Page<TeacherDTO> getAllTeachersSorted(Pageable pageable, String sortDirection, String sortBy);
-    Result<List<TeacherDTO>> getTeachersByIds(Set<Long> IdSet);
+    List<TeacherDTO> getTeachersByIds(Set<Long> IdSet);
     Page<TeacherDTO> getTeachersByTitlePageable(Title title, Pageable pageable);
 }
