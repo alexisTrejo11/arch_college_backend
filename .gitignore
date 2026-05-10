@@ -23,8 +23,18 @@
 hs_err_pid*
 replay_pid*
 
+
 .idea/
 .gradle/
+gradle
+build/
+
+# Gradle wrapper — keep these tracked (override *.jar and `gradle` above; later rules win).
+# Parent dirs must be un-ignored or Git will not re-include files under an ignored folder.
+!**/gradle/
+!**/gradle/wrapper/
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.properties
 
 academic_curriculum-service/.env
 enrollment-service/.env
@@ -33,3 +43,4 @@ schedule-service/.env
 student-service/.env
 teacher-service/.env
 user-service/.env
+
