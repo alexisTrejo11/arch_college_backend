@@ -25,13 +25,13 @@ allprojects {
 	}
 }
 
-// Configuration specific to Spring Boot projects
-configure(subprojects.findAll { it.plugins.hasPlugin('org.springframework.boot') }) {
+// Disable bootJar for the shared library only (services need bootJar to produce runnable fat JARs)
+configure(subprojects.findAll { it.name == 'common-classes' }) {
 	tasks.named('bootJar').configure {
-		enabled = false // Disable bootJar task for libraries
+		enabled = false
 	}
 
 	tasks.named('jar').configure {
-		enabled = true // Ensure jar task is enabled
+		enabled = true
 	}
 }

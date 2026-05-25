@@ -44,3 +44,6 @@ student-service/.env
 teacher-service/.env
 user-service/.env
 
+# Root Docker env
+.env
+
