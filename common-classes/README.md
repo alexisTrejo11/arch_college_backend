@@ -67,10 +67,9 @@ It owns [brief domain responsibility] with secure, validated, and observable API
 ├── observability/                  # Omit if not using observability stack
 │   ├── prometheus/
 │   └── grafana/provisioning/datasources/
-├── docs/
-│   └── project/
-│       ├── *.md                   # Human-readable docs
-│       └── obsidian/*.md          # Structured source docs
+├── docs/                           # Per-service only (see each *-service/docs/)
+│   ├── source/                    # YAML frontmatter sources
+│   └── generated/                 # Human-readable output (yaml_to_markdown.py)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── build.gradle                    # or pom.xml, package.json, etc.
@@ -218,42 +217,21 @@ Key endpoints (all external traffic via Nginx if used, otherwise direct):
 
 ## Documentation Navigation
 
-Detailed docs are available under `docs/`:
+This library has no local `docs/` folder. Service documentation lives under each microservice:
 
-### Main Service Documentation
+| Service | Generated docs |
+| --- | --- |
+| `account-service` | [../account-service/docs/generated/](../account-service/docs/generated/) |
+| `student-service` | [../student-service/docs/generated/](../student-service/docs/generated/) |
+| `teacher-service` | [../teacher-service/docs/generated/](../teacher-service/docs/generated/) |
+| `curriculum-service` | [../curriculum-service/docs/generated/](../curriculum-service/docs/generated/) |
+| `schedule-service` | [../schedule-service/docs/generated/](../schedule-service/docs/generated/) |
+| `enrollment-service` | [../enrollment-service/docs/generated/](../enrollment-service/docs/generated/) |
+| `grade-service` | [../grade-service/docs/generated/](../grade-service/docs/generated/) |
 
-- [Project Metadata](https://docs/project/ProjectMetadata.md)
-    
-- [Project Overview](https://docs/project/ProjectOverview.md)
-    
-- [Project Infrastructure](https://docs/project/ProjectInfrastructure.md)
-    
-- [Project Features](https://docs/project/ProjectFeature.md)
-    
-- [Project Code Showcase](https://docs/project/ProjectCodeShowCase.md)
-    
-- [Project Architecture](https://docs/project/ProjectArchitecture.md)
-    
-- [API Schema](https://docs/project/APISchema.md)
-    
-
-### Structured Source Docs (Obsidian-style)
-
-- [Project Metadata (Source)](https://docs/project/obsidian/ProjectMetadata.md)
-    
-- [Project Overview (Source)](https://docs/project/obsidian/ProjectOverview.md)
-    
-- [Project Infrastructure (Source)](https://docs/project/obsidian/ProjectInfrastructure.md)
-    
-- [Project Features (Source)](https://docs/project/obsidian/ProjectFeature.md)
-    
-- [Project Code Showcase (Source)](https://docs/project/obsidian/ProjectCodeShowCase.md)
-    
-- [Project Architecture (Source)](https://docs/project/obsidian/ProjectArchitecture.md)
-    
-- [API Schema (Source)](https://docs/project/obsidian/APISchema.md)
+Platform overview: [../README.md](../README.md#documentation--schema).
     
 
 ---
 
-If this service changes its API contract, domain rules, or observability setup, update `docs/` and this `README.md` in the same PR.
+If this service changes its API contract, domain rules, or observability setup, update the relevant service `docs/source/` files and this `README.md` in the same PR.

@@ -16,10 +16,10 @@ Production-style **Spring Boot microservices** monorepo for an architecture facu
 
 | Area | Purpose |
 | --- | --- |
-| `*-service/` | Domain microservices (REST APIs, own databases, local `docs/`). |
+| `*-service/` | Domain microservices (REST APIs, own databases, `docs/source/` + `docs/generated/`). |
 | `config-data/` | Spring Cloud Config payloads (`https://github.com/alexisTrejo11/architecture-college-plattform/tree/main/config-data`). |
 | `docker-compose.yml` | Postgres, MongoDB, RabbitMQ, Config Server, Eureka, Admin, business services. |
-| `docs/` | Portfolio-ready Markdown + `.obsidian.md` sources mapped to `docs-schema.ts`. |
+| `docs-schema.ts` | Type definitions for a portfolio CMS (YAML frontmatter shape). |
 | `common-classes/` | Shared library consumed by services. |
 | `eureka-server/`, `config-server/`, `admin-service/` | Platform control plane modules. |
 
@@ -46,9 +46,21 @@ Production-style **Spring Boot microservices** monorepo for an architecture facu
 
 ## Documentation & schema
 
-- Root narrative (no front matter): [`docs/`](docs/) — `ProjectOverview.md`, `ProjectArchitecture.md`, `ProjectInfrastructure.md`, `ProjectFeature.md`, `ProjectCodeShowCase.md`, `APISchema.md`.
-- Each service repeats the structure under `{service}/docs/` plus Obsidian sources in `{service}/docs/obsidian/`.
-- Type definitions for a portfolio CMS: [`docs-schema.ts`](docs-schema.ts).
+- Portfolio CMS types: [`docs/project/source/schema.ts`](docs/project/source/schema.ts).
+- Each domain service keeps **source** YAML frontmatter in `{service}/docs/source/` and **generated** human-readable Markdown in `{service}/docs/generated/`.
+- **Unified project source** (all services merged): [`docs/project/source/`](docs/project/source/) — run `python docs/project/merge_service_sources.py` after editing any service source file.
+- Regenerate one service: `cd {service} && python docs/yaml_to_markdown.py` (requires PyYAML — use the repo `.venv` or `pip install pyyaml`).
+- Regenerate all service docs **and** merge project source from the repo root: `./scripts/regenerate-docs.sh`
+
+| Service | Generated docs | Source |
+| --- | --- | --- |
+| `account-service` | [docs/generated/](account-service/docs/generated/) | [docs/source/](account-service/docs/source/) |
+| `student-service` | [docs/generated/](student-service/docs/generated/) | [docs/source/](student-service/docs/source/) |
+| `teacher-service` | [docs/generated/](teacher-service/docs/generated/) | [docs/source/](teacher-service/docs/source/) |
+| `curriculum-service` | [docs/generated/](curriculum-service/docs/generated/) | [docs/source/](curriculum-service/docs/source/) |
+| `schedule-service` | [docs/generated/](schedule-service/docs/generated/) | [docs/source/](schedule-service/docs/source/) |
+| `enrollment-service` | [docs/generated/](enrollment-service/docs/generated/) | [docs/source/](enrollment-service/docs/source/) |
+| `grade-service` | [docs/generated/](grade-service/docs/generated/) | [docs/source/](grade-service/docs/source/) |
 
 ## Deployed topology (Compose)
 

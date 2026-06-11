@@ -39,7 +39,7 @@ Lifecycle management for faculty: creation, validation of payroll numbers, and p
 
 ## API surface
 
-Representative operations include: Create teacher, Delete teacher, Validate account number, Get teacher (note: base path lacks /v1/api prefix). The full contract is generated at runtime—use Swagger UI or `docs/APISchema.md` for portfolio alignment with `APISchema` in `docs-schema.ts`.
+Representative operations include: Create teacher, Delete teacher, Validate account number, Get teacher (note: base path lacks /v1/api prefix). The full contract is generated at runtime—use Swagger UI or [`docs/generated/APISchema.md`](docs/generated/APISchema.md) for portfolio alignment with `APISchema` in `docs-schema.ts`.
 
 ## Security
 
@@ -75,10 +75,16 @@ The `teacher-service` container receives datasource, discovery, and (if applicab
 
 | Kind | Path |
 |------|------|
-| Human-readable | [docs/ProjectOverview.md](docs/ProjectOverview.md), [docs/ProjectArchitecture.md](docs/ProjectArchitecture.md), [docs/APISchema.md](docs/APISchema.md), … |
-| Obsidian / structured | [docs/obsidian/](docs/obsidian/) (YAML front matter aligned with `docs-schema.ts`) |
+| Generated (human-readable) | [docs/generated/](docs/generated/) — [ProjectOverview](docs/generated/ProjectOverview.md), [ProjectArchitecture](docs/generated/ProjectArchitecture.md), [ProjectMetadata](docs/generated/ProjectMetadata.md), [ProjectInfrastructure](docs/generated/ProjectInfrastructure.md), [ProjectFeature](docs/generated/ProjectFeature.md), [ProjectCodeShowCase](docs/generated/ProjectCodeShowCase.md), [APISchema](docs/generated/APISchema.md) |
+| Source (YAML frontmatter) | [docs/source/](docs/source/) — edit here, then regenerate (see below) |
 
-Platform-wide narrative: [../docs/ProjectOverview.md](../docs/ProjectOverview.md).
+Regenerate from source:
+
+```bash
+python docs/yaml_to_markdown.py
+```
+
+Platform overview: [../README.md](../README.md).
 
 ---
 
