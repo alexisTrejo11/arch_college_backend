@@ -1,0 +1,17 @@
+rootProject.name = 'arch_college_backend'
+
+include (
+    'config-server',
+    'eureka-server',
+    'admin-service',
+    'common-classes',
+    'teacher-service',
+    'student-service',
+    'curriculum-service',
+    'group-service',
+    'schedule-service',
+    'enrollment-service',
+    'grade-service',
+    'account-service'
+)
+

@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:gradetest;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/gradetest
+      database: gradetest
+  autoconfigure:
+    # Prevent Flapdoodle from trying to download an embedded MongoDB binary during CI/tests.
+    exclude: org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  boot:
+    admin:
+      client:
+        enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+eureka:
+  client:
+    enabled: false
+
+jwt:
+  secret:
+    key: test-secret-key-must-be-at-least-256-bits-for-hs256-testing-purposes-only
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# (Optional) Flapdoodle properties can be removed because embedded auto-config is disabled above.

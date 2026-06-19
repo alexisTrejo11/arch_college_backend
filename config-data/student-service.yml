@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME}
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST}
+    port: ${SPRING_RABBITMQ_PORT}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+
+  boot:
+    admin:
+      client:
+        url: ${SPRING_BOOT_ADMIN_CLIENT_URL}
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    #hibernate:
+    #  ddl-auto: update
+
+  cloud:
+    netflix:
+      eureka:
+        client:
+          enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE}
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+springdoc:
+  api-docs:
+    path: ${SPRINGDOC_API_DOCS_PATH}
+  swagger-ui:
+    path: ${SPRINGDOC_SWAGGER_UI_PATH}
+    paths-to-match: ${SPRINGDOC_PATHS_TO_MATCH}
+    packages-to-scan: ${SPRINGDOC_PACKAGES_TO_SCAN}
+
+server:
+  port: ${SERVER_PORT}
